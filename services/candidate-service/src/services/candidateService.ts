@@ -1,4 +1,5 @@
 import { FastifyInstance } from 'fastify';
+import '../plugins/supabase'; // Import for module augmentation
 
 export class CandidateService {
   private supabase: FastifyInstance['supabase'];
