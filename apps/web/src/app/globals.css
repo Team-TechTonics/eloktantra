@@ -6,8 +6,36 @@
   --primary: #FF6B2C;
   --secondary: #121826;
   --accent: #FF9A3C;
+  --border: rgba(255, 255, 255, 0.08);
+  --surface: rgba(18, 24, 38, 0.75);
+  --muted: #9ba3b4;
+  --shadow-surface: 0 18px 60px rgba(0, 0, 0, 0.35);
   --font-inter: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-poppins: "Poppins", "Inter", sans-serif;
+}
+
+.theme-dark {
+  --background: #0B0F1A;
+  --foreground: #F8FAFC;
+  --primary: #FF6B2C;
+  --secondary: #121826;
+  --accent: #FF9A3C;
+  --border: rgba(255, 255, 255, 0.08);
+  --surface: rgba(18, 24, 38, 0.78);
+  --muted: #9ba3b4;
+  --shadow-surface: 0 18px 60px rgba(0, 0, 0, 0.35);
+}
+
+.theme-light {
+  --background: #f8f9fd;
+  --foreground: #0f172a;
+  --primary: #ff6b2c;
+  --secondary: #ffffff;
+  --accent: #ff8a4a;
+  --border: #dbe1ee;
+  --surface: #ffffff;
+  --muted: #4b5563;
+  --shadow-surface: 0 14px 40px rgba(15, 23, 42, 0.08);
 }
 
 @theme inline {
@@ -16,6 +44,9 @@
   --color-primary: var(--primary);
   --color-secondary: var(--secondary);
   --color-accent: var(--accent);
+  --color-border: var(--border);
+  --color-surface: var(--surface);
+  --color-muted: var(--muted);
   --font-sans: var(--font-inter);
   --font-heading: var(--font-poppins);
 
@@ -29,7 +60,7 @@
 }
 
 body {
-  background: var(--background);
+  background: radial-gradient(160% 120% at 50% 12%, color-mix(in srgb, var(--primary) 12%, transparent), transparent 42%), var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
@@ -40,10 +71,12 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .glass-card {
-  background: rgba(18, 24, 38, 0.7);
+  background: var(--surface);
   backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
   border-radius: 1rem;
+  color: var(--foreground);
+  box-shadow: var(--shadow-surface);
 }
 
 .orange-gradient {
@@ -54,4 +87,32 @@ h1, h2, h3, h4, h5, h6 {
   background: linear-gradient(135deg, var(--primary), var(--accent));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+}
+
+.navbar-surface {
+  background: color-mix(in srgb, var(--secondary) 92%, transparent);
+  border-bottom: 1px solid var(--border);
+  color: var(--foreground);
+  box-shadow: 0 8px 30px rgba(15, 23, 42, 0.06);
+}
+
+.nav-link {
+  color: color-mix(in srgb, var(--foreground) 75%, transparent);
+  transition: color 150ms ease;
+}
+
+.nav-link:hover,
+.nav-link.nav-active {
+  color: var(--primary);
+}
+
+.theme-light .glass-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--foreground);
+  box-shadow: var(--shadow-surface);
+}
+
+.theme-light body {
+  background: radial-gradient(140% 120% at 50% 10%, color-mix(in srgb, var(--primary) 10%, transparent), transparent 36%), var(--background);
 }

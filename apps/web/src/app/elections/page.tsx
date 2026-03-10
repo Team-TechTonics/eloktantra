@@ -2,42 +2,44 @@
 
 import Link from 'next/link';
 
+const now = Date.now();
+const elections = [
+  {
+    id: '1',
+    title: 'General Assembly 2024',
+    constituency: 'South Delhi',
+    status: 'ACTIVE',
+    endTime: new Date(now + 86400000 * 2).toISOString(),
+  },
+  {
+    id: '2',
+    title: 'Municipal Corporation',
+    constituency: 'North Delhi',
+    status: 'UPCOMING',
+    endTime: new Date(now + 86400000 * 15).toISOString(),
+  },
+  {
+    id: '3',
+    title: 'Student Council',
+    constituency: 'Central Delhi',
+    status: 'CLOSED',
+    endTime: new Date(now - 86400000 * 5).toISOString(),
+  },
+];
+
 export default function ElectionsPage() {
-  const elections = [
-    {
-      id: '1',
-      title: 'General Assembly 2024',
-      constituency: 'South Delhi',
-      status: 'ACTIVE',
-      endTime: new Date(Date.now() + 86400000 * 2).toISOString(),
-    },
-    {
-      id: '2',
-      title: 'Municipal Corporation',
-      constituency: 'North Delhi',
-      status: 'UPCOMING',
-      endTime: new Date(Date.now() + 86400000 * 15).toISOString(),
-    },
-    {
-      id: '3',
-      title: 'Student Council',
-      constituency: 'Central Delhi',
-      status: 'CLOSED',
-      endTime: new Date(Date.now() - 86400000 * 5).toISOString(),
-    },
-  ];
 
   return (
     <div className="container mx-auto px-4 py-12">
       <div className="max-w-5xl mx-auto">
         <header className="mb-12 text-center">
           <h1 className="text-5xl font-black mb-4 orange-text-gradient uppercase tracking-tight">Active Elections</h1>
-          <p className="text-gray-400 font-medium text-lg">Participate in secure, anonymous, and blockchain-verified voting. Your vote is your power.</p>
+          <p className="text-slate-600 font-medium text-lg">Participate in secure, anonymous, and blockchain-verified voting. Your vote is your power.</p>
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {elections.map((election) => (
-            <div key={election.id} className="glass-card overflow-hidden hover:bg-secondary/80 transition-all duration-300 hover:-translate-y-2 border-white/5 hover:border-primary/20 flex flex-col">
+            <div key={election.id} className="glass-card overflow-hidden transition-all duration-300 hover:-translate-y-2 hover:border-primary/20 flex flex-col">
               <div className="p-8 flex-grow">
                 <div className="flex justify-between items-start mb-6">
                   <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
@@ -54,15 +56,15 @@ export default function ElectionsPage() {
                   </span>
                 </div>
                 
-                <h2 className="text-2xl font-black text-white mb-2 uppercase tracking-tight">{election.title}</h2>
+                <h2 className="text-2xl font-black text-foreground mb-2 uppercase tracking-tight">{election.title}</h2>
                 <div className="space-y-2 text-sm font-bold">
-                  <p className="text-gray-500 uppercase tracking-widest text-[10px]">Constituency</p>
-                  <p className="text-gray-200">{election.constituency}</p>
+                  <p className="text-slate-500 uppercase tracking-widest text-[10px]">Constituency</p>
+                  <p className="text-slate-800">{election.constituency}</p>
                 </div>
                 
                 <div className="mt-6 pt-6 border-t border-white/5 space-y-2">
-                  <p className="text-gray-500 uppercase tracking-widest text-[10px]">Ends On</p>
-                  <p className="text-gray-200 text-sm">
+                  <p className="text-slate-500 uppercase tracking-widest text-[10px]">Ends On</p>
+                  <p className="text-slate-800 text-sm">
                     {new Date(election.endTime).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}
                   </p>
                 </div>

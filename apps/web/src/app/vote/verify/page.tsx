@@ -3,10 +3,18 @@
 import { useState } from 'react';
 import Link from 'next/link';
 
+interface VerificationResult {
+  status: string;
+  transaction: string;
+  timestamp: string;
+  block: string;
+  network: string;
+}
+
 export default function VoteVerifyPage() {
   const [hash, setHash] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<VerificationResult | null>(null);
 
   const handleVerify = (e: React.FormEvent) => {
     e.preventDefault();

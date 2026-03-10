@@ -32,7 +32,7 @@ export default function VerifyPage() {
         <div className="relative z-10">
           <h2 className="text-3xl font-black mb-4 orange-text-gradient uppercase tracking-tight">Verify Your Email</h2>
           <p className="text-gray-400 mb-10 leading-relaxed font-medium">
-            We've sent a verification link to your email address. 
+            We&apos;ve sent a verification link to your email address. 
             Please check your inbox and verify your email to activate your civic account.
           </p>
 

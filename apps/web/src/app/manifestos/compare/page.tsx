@@ -51,7 +51,7 @@ export default function CompareManifestosPage() {
       <div className="max-w-7xl mx-auto">
         <header className="mb-12 md:mb-16 text-center">
           <h1 className="text-3xl md:text-5xl font-black mb-4 orange-text-gradient uppercase tracking-tight leading-tight">AI Manifesto Comparison</h1>
-          <p className="text-sm md:text-lg text-gray-400 font-medium leading-relaxed max-w-3xl mx-auto">Deep dive into party policies. Our AI analyzes and summarizes complex manifestos for side-by-side clarity.</p>
+          <p className="text-sm md:text-lg text-slate-600 font-medium leading-relaxed max-w-3xl mx-auto">Deep dive into party policies. Our AI analyzes and summarizes complex manifestos for side-by-side clarity.</p>
         </header>
 
         <div className="space-y-16 md:space-y-24">
@@ -59,7 +59,7 @@ export default function CompareManifestosPage() {
             <section key={idx} className="relative">
               {/* Category Header */}
               <div className="flex flex-col md:flex-row items-start md:items-baseline gap-4 mb-8 md:mb-10 border-b border-white/5 pb-6">
-                <h2 className="text-2xl md:text-3xl font-black text-white uppercase tracking-tighter">
+                <h2 className="text-2xl md:text-3xl font-black text-foreground uppercase tracking-tighter">
                   {categoryBlock.category}
                 </h2>
                 <div className="flex-1 h-px bg-gradient-to-r from-primary/50 to-transparent hidden md:block" />
@@ -79,17 +79,17 @@ export default function CompareManifestosPage() {
                       <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center font-black text-primary border border-primary/20">
                         {item.party.charAt(0)}
                       </div>
-                      <h3 className="text-lg md:text-xl font-black text-gray-200 uppercase tracking-tight">{item.party}</h3>
+                      <h3 className="text-lg md:text-xl font-black text-foreground uppercase tracking-tight">{item.party}</h3>
                     </div>
 
                     <div className="flex-grow space-y-6 md:space-y-8">
                       <div>
-                        <div className="text-[10px] font-black uppercase tracking-widest text-gray-600 mb-3 flex items-center">
-                          <span className="w-4 h-px bg-gray-600 mr-2" />
+                        <div className="text-[10px] font-black uppercase tracking-widest text-slate-600 mb-3 flex items-center">
+                          <span className="w-4 h-px bg-slate-400 mr-2" />
                           Proposed Policy
                         </div>
-                        <p className="text-sm md:text-base text-gray-400 font-medium leading-relaxed italic">
-                          "{item.policy}"
+                        <p className="text-sm md:text-base text-slate-700 font-medium leading-relaxed italic">
+                          &quot;{item.policy}&quot;
                         </p>
                       </div>
 
@@ -97,7 +97,7 @@ export default function CompareManifestosPage() {
                         <div className="absolute -top-3 left-6 px-3 py-1 bg-primary rounded-full text-[10px] font-black uppercase tracking-widest text-white shadow-lg shadow-primary/30">
                           AI Summary
                         </div>
-                        <p className="text-xs md:text-sm text-gray-300 font-bold leading-relaxed pt-2">
+                        <p className="text-xs md:text-sm text-slate-700 font-bold leading-relaxed pt-2">
                           {item.aiSummary}
                         </p>
                       </div>

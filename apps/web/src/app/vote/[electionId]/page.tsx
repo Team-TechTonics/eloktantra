@@ -2,10 +2,8 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 
-export default function VotingPage({ params }: { params: { electionId: string } }) {
-  const router = useRouter();
+export default function VotingPage() {
   const [selectedCandidate, setSelectedCandidate] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasVoted, setHasVoted] = useState(false);
