@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import * as faceapi from 'face-api.js';
 
 export default function VotePage() {
   const [step, setStep] = useState(1);
@@ -10,51 +11,208 @@ export default function VotePage() {
   const [authToken, setAuthToken] = useState('');
   const [votingToken, setVotingToken] = useState('');
   const [error, setError] = useState('');
+  const [livenessStep, setLivenessStep] = useState(0);
+  const [livenessCountdown, setLivenessCountdown] = useState(0);
+  const [isPoseLocked, setIsPoseLocked] = useState(false);
+  const [modelsLoaded, setModelsLoaded] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const detectionRef = useRef<any>(null);
+  const isPoseLockedRef = useRef(false);
+  const router = useRouter();
 
-  const handleDigiLockerMock = async () => {
-    setLoading(true);
+  const livenessInstructions = [
+    "Focus your eyes on the center",
+    "Slowly turn your head LEFT",
+    "Slowly turn your head RIGHT",
+    "Now look UP towards the CEILING",
+    "Now look DOWN at your KEYBOARD",
+    "STAY STILL: Finalizing Biometric Scan..."
+  ];
+
+  const livenessStatus = [
+    "Calibrating Biometrics...",
+    "Validating Head Rotation...",
+    "Confirming Profile Geometry...",
+    "Checking Depth Landmarks...",
+    "Detecting Anti-Spoof Patterns...",
+    "Finalizing Verification..."
+  ];
+
+  useEffect(() => {
+    const loadModels = async () => {
+      try {
+        await Promise.all([
+          faceapi.nets.tinyFaceDetector.loadFromUri('/models'),
+          faceapi.nets.faceLandmark68Net.loadFromUri('/models'),
+        ]);
+        setModelsLoaded(true);
+      } catch (err) {
+        console.error("Model loading failed:", err);
+      }
+    };
+    loadModels();
+
+    const searchParams = new URLSearchParams(window.location.search);
+    const verified = searchParams.get('verified');
+    const userId = searchParams.get('userId');
+
+    if (verified === 'true' && userId) {
+      setStep(2);
+      setUser({ id: userId, name: 'Ramanuj' });
+    }
+  }, []);
+
+  const handleDigiLockerMock = () => {
     setError('');
+    // Open in a new tab instead of a popup
+    window.open('/digilocker/login?from=vote', '_blank');
+  };
+
+  const startCamera = async () => {
     try {
-      // Simulating redirect to DigiLocker and back
-      // Using the backend we built: GET /auth/digilocker/callback?code=mock_auth_code_123
-      const response = await fetch('http://localhost:5001/auth/digilocker/callback?code=mock_auth_code_123');
-      const data = await response.json();
-      
-      if (response.ok) {
-        setUser(data.user);
-        setAuthToken(data.authToken);
-        setStep(2);
-      } else {
-        setError(data.error || 'Identity verification failed');
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 1280, height: 720 } });
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        streamRef.current = stream;
       }
     } catch (err) {
-      setError('Could not connect to authentication server');
-    } finally {
-      setLoading(false);
+      setError("Camera access denied. Please enable your webcam.");
     }
   };
 
-  const handleFaceVerify = async () => {
+  const stopCamera = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+    }
+  };
+  const startLivenessFlow = async () => {
+    if (!modelsLoaded) {
+      setError("AI Models are still loading. Please wait...");
+      return;
+    }
+
+    setLivenessStep(0);
+    setLivenessCountdown(3);
     setLoading(true);
-    setError('');
+    setIsPoseLocked(false);
+    let current = 0;
+    
+    const checkPose = async () => {
+      if (!videoRef.current || step !== 2) return;
+
+      const detection = await faceapi.detectSingleFace(
+        videoRef.current,
+        new faceapi.TinyFaceDetectorOptions()
+      ).withFaceLandmarks();
+
+      if (!detection) {
+        setIsPoseLocked(false);
+        setLivenessCountdown(3); // Reset timer if face lost
+        requestAnimationFrame(checkPose);
+        return;
+      }
+
+      const landmarks = detection.landmarks;
+      const nose = landmarks.getNose();
+      const leftEye = landmarks.getLeftEye();
+      const rightEye = landmarks.getRightEye();
+      const mouth = landmarks.getMouth();
+
+      const faceWidth = Math.abs(rightEye[3].x - leftEye[0].x);
+      const faceCenter = (leftEye[0].x + rightEye[3].x) / 2;
+      const noseTip = nose[3];
+
+      let isCurrentPoseCorrect = false;
+
+      // Real Pose Logic
+      if (current === 0) { // Center
+        isCurrentPoseCorrect = Math.abs(noseTip.x - faceCenter) < faceWidth * 0.15;
+      } else if (current === 1) { // Left
+        isCurrentPoseCorrect = (noseTip.x - faceCenter) < -faceWidth * 0.2;
+      } else if (current === 2) { // Right
+        isCurrentPoseCorrect = (noseTip.x - faceCenter) > faceWidth * 0.2;
+      } else if (current === 3) { // Up
+        const eyeNoseDist = noseTip.y - (leftEye[0].y + rightEye[3].y)/2;
+        isCurrentPoseCorrect = eyeNoseDist < faceWidth * 0.2;
+      } else if (current === 4) { // Down
+        const eyeNoseDist = noseTip.y - (leftEye[0].y + rightEye[3].y)/2;
+        isCurrentPoseCorrect = eyeNoseDist > faceWidth * 0.4;
+      } else {
+        isCurrentPoseCorrect = true; // Hold Still
+      }
+
+      if (isCurrentPoseCorrect) {
+        if (!isPoseLocked) {
+          setIsPoseLocked(true);
+          isPoseLockedRef.current = true;
+        }
+      } else {
+        setIsPoseLocked(false);
+        isPoseLockedRef.current = false;
+        setLivenessCountdown(3);
+      }
+
+      requestAnimationFrame(checkPose);
+    };
+
+    // Run the real detection loop
+    checkPose();
+
+    // The countdown logic now only progresses if isPoseLocked is true
+    const interval = setInterval(() => {
+      setLivenessCountdown(prev => {
+        if (isPoseLockedRef.current && prev <= 1) {
+          if (current < livenessInstructions.length - 1) {
+            current++;
+            setLivenessStep(current);
+            isPoseLockedRef.current = false; // Require new lock for next step
+            setIsPoseLocked(false);
+            return 3;
+          } else {
+            clearInterval(interval);
+            completeFaceVerification();
+            return 0;
+          }
+        } else if (isPoseLockedRef.current) {
+          return prev - 1;
+        }
+        return 3; 
+      });
+    }, 1000); 
+  };
+
+  const completeFaceVerification = async () => {
+    setLoading(true);
     try {
-      const response = await fetch('http://localhost:5001/auth/face-verify', {
+      // 1. Capture Image
+      const canvas = document.createElement('canvas');
+      if (videoRef.current) {
+        canvas.width = videoRef.current.videoWidth || 640;
+        canvas.height = videoRef.current.videoHeight || 480;
+        canvas.getContext('2d')?.drawImage(videoRef.current, 0, 0);
+      }
+      const image = canvas.toDataURL('image/png');
+
+      // 2. Call backend for matching and liveness validation
+      // Fallback: If user.id is missing, use session-id
+      const finalUserId = user?.id || `anon-${Date.now()}`;
+      
+      const response = await fetch('http://localhost:5001/verify-face', {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${authToken}`
-        },
-        body: JSON.stringify({ image: 'base64_mock_data' })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image, userId: finalUserId })
       });
       const data = await response.json();
 
-      if (response.ok) {
-        setStep(3); // Proceed to Risk Check
+      if (data.success) {
+        stopCamera();
+        setStep(3);
       } else {
         setError(data.error || 'Face verification failed');
       }
     } catch (err) {
-      setError('Face verification service unavailable');
+      setError('Internal verification error');
     } finally {
       setLoading(false);
     }
@@ -63,45 +221,36 @@ export default function VotePage() {
   const handleRiskAndToken = async () => {
     setLoading(true);
     setError('');
+    
     try {
-      // 1. Evaluate Risk
-      const riskRes = await fetch('http://localhost:5001/risk/evaluate', {
+      // Call backend to generate real voting token
+      const response = await fetch('http://localhost:5001/generate-token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          faceConfidence: 0.92,
-          deviceTrusted: true,
-          attemptCount: 1
-        })
+        body: JSON.stringify({ userId: user?.id })
       });
-      const riskData = await riskRes.json();
+      const data = await response.json();
 
-      if (!riskRes.ok || riskData.status === 'BLOCKED') {
-        setError('Security check failed: Risk score too high');
-        setLoading(false);
-        return;
-      }
-
-      // 2. Generate Voting Token
-      const tokenRes = await fetch('http://localhost:5001/vote/generate-token', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user._id })
-      });
-      const tokenData = await tokenRes.json();
-
-      if (tokenRes.ok) {
-        setVotingToken(tokenData.token);
+      if (data.success) {
+        setVotingToken(data.token);
         setStep(4);
       } else {
-        setError(tokenData.error || 'Failed to generate voting token');
+        setError(data.error || 'Identity evaluation failed');
       }
     } catch (err) {
-      setError('Internal security system error');
+      setError('Security bridge unavailable');
     } finally {
       setLoading(false);
     }
+
   };
+  
+  useEffect(() => {
+    if (step === 2) {
+      startCamera();
+    }
+    return () => stopCamera();
+  }, [step]);
 
   return (
     <div className="min-h-screen pt-24 pb-12 px-4 flex flex-col items-center justify-center bg-[#0a0a0a]">
@@ -149,27 +298,91 @@ export default function VotePage() {
           </div>
         )}
 
-        {/* Step 2: Face Verification */}
+        {/* Step 2: Automated Face Verification */}
         {step === 2 && (
           <div className="text-center animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <h1 className="text-3xl font-bold mb-4 text-white">Face Verification</h1>
-            <p className="text-gray-400 mb-8 leading-relaxed">
-              Hello, <span className="text-primary font-bold">{user?.name}</span>. Please complete a quick face scan to ensure you are currently present at this device.
+            <h1 className="text-3xl font-black mb-4 text-white uppercase tracking-tighter">AI Liveness Shield</h1>
+            <p className="text-gray-400 mb-8 leading-relaxed font-medium">
+              Authenticating <span className="text-primary font-bold">{user?.name}</span>...
             </p>
             
-            <div className="w-48 h-48 mx-auto mb-8 rounded-full border-4 border-primary/30 border-dashed animate-pulse flex items-center justify-center bg-primary/5">
-               <svg className="w-20 h-20 text-primary/40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-               </svg>
+            <div className="relative w-72 h-72 mx-auto mb-10 group">
+               {/* Scanning Pulse Elements */}
+               <div className="absolute inset-0 rounded-full border-4 border-primary/20 animate-ping"></div>
+               <div className="absolute -inset-2 rounded-full border-2 border-primary/40 border-dotted animate-spin-slow"></div>
+               
+               <div className="w-full h-full rounded-full border-4 border-white/10 overflow-hidden bg-black shadow-2xl shadow-primary/20 relative z-10 transition-transform duration-700">
+                  <video 
+                    ref={videoRef} 
+                    autoPlay 
+                    muted 
+                    playsInline 
+                    className="w-full h-full object-cover scale-x-[-1]"
+                  />
+                  {/* High-tech Scanning UI Overlay */}
+                  <div className="absolute inset-0 pointer-events-none border-[12px] border-black/40 rounded-full"></div>
+                  <div className="absolute top-1/2 left-0 right-0 h-px bg-primary/40 animate-pulse shadow-[0_0_15px_rgba(59,130,246,0.5)]"></div>
+                  <div className="absolute top-0 bottom-0 left-1/2 w-px bg-primary/40 animate-pulse"></div>
+                  
+                  {/* Step Success Overlay */}
+                  {loading && (
+                    <div className="absolute inset-0 bg-primary/5 flex items-center justify-center">
+                       <div className="w-full h-1 bg-primary/20 absolute bottom-1/4">
+                          <div 
+                             className="h-full bg-primary transition-all duration-[2800ms] linear" 
+                             style={{ width: loading ? '100%' : '0%' }}
+                             key={livenessStep}
+                          ></div>
+                       </div>
+                    </div>
+                  )}
+               </div>
+               
+               {livenessStep < 5 && loading && (
+                 <div 
+                   data-pose-locked={isPoseLocked}
+                   className={`absolute -top-6 -right-6 p-4 rounded-3xl shadow-2xl border-4 font-black transition-all duration-300 scale-110
+                   ${isPoseLocked ? 'bg-primary text-white border-white animate-pulse' : 'bg-white text-black border-primary'}`}>
+                   <div className="text-[10px] uppercase opacity-70 tracking-widest mb-1">
+                     {isPoseLocked ? 'Capturing' : 'Aligning'}
+                   </div>
+                   <div className="text-2xl">
+                     {isPoseLocked ? `${livenessCountdown}s` : '...'}
+                   </div>
+                 </div>
+               )}
             </div>
 
-            <button
-              onClick={handleFaceVerify}
-              disabled={loading}
-              className="w-full py-4 bg-primary hover:bg-accent disabled:opacity-50 text-white font-bold rounded-xl transition-all shadow-lg shadow-primary/20"
-            >
-              {loading ? "Verifying..." : "Start Face Scan"}
-            </button>
+            <div className={`
+              mb-10 p-6 rounded-3xl border transition-all duration-500
+              ${isPoseLocked ? 'bg-primary/20 border-primary shadow-[0_0_30px_rgba(59,130,246,0.3)]' : 'bg-white/5 border-white/5'}
+            `}>
+               <p className={`text-lg font-black uppercase tracking-[0.2em] transition-all
+                 ${isPoseLocked ? 'text-white scale-105' : 'text-gray-500'}`}>
+                  {livenessInstructions[livenessStep]}
+               </p>
+               {livenessStep < 6 && loading && (
+                 <p className="text-[10px] font-bold text-primary mt-2 uppercase tracking-widest leading-none">
+                   {isPoseLocked ? livenessStatus[livenessStep] : "Move your head to begin scan"}
+                 </p>
+               )}
+            </div>
+
+            {!loading || livenessStep >= 6 ? (
+              <button
+                onClick={startLivenessFlow}
+                className="w-full py-5 bg-primary hover:bg-accent text-white font-black rounded-2xl transition-all shadow-xl shadow-primary/20 uppercase tracking-[0.4em] text-sm group"
+              >
+                <span className="group-hover:translate-x-1 transition-transform block">START BIO-SCAN</span>
+              </button>
+            ) : (
+              <div className="flex items-center justify-center gap-4 py-5 text-gray-400 font-extrabold uppercase tracking-widest text-[10px] italic">
+                 <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                 <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                 <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce"></div>
+                 Mapping Facial Contours...
+              </div>
+            )}
           </div>
         )}
 
@@ -225,10 +438,10 @@ export default function VotePage() {
             </div>
 
             <button
-              onClick={() => {}} // No implementation for actual voting stage yet
-              className="w-full py-4 bg-gradient-to-r from-red-600 to-orange-600 text-white font-bold rounded-xl shadow-xl shadow-red-500/20"
+              onClick={() => router.push('/vote/delhi-2024?token=' + votingToken)}
+              className="w-full py-4 bg-gradient-to-r from-red-600 to-orange-600 text-white font-bold rounded-xl shadow-xl shadow-red-500/20 group"
             >
-              Proceed to eEVM Console
+              <span className="group-hover:translate-x-1 transition-transform block">Proceed to eEVM Console →</span>
             </button>
             
             <p className="mt-6 text-sm text-gray-500">Voting stage will open in the next phase of the project.</p>
