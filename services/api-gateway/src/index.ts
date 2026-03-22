@@ -129,6 +129,13 @@ fastify.register(proxy, {
   rewritePrefix: '/',
 });
 
+fastify.register(proxy, {
+  ...proxyOpts,
+  upstream: config.services.voting.url,
+  prefix: '/election',
+  rewritePrefix: '/elections',
+});
+
 fastify.setNotFoundHandler(async (_request, reply) => {
   return reply.code(404).send({ success: false, error: 'Route not found' });
 });

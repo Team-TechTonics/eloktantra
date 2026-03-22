@@ -73,4 +73,7 @@ export default async function electionRoutes(fastify: FastifyInstance) {
       },
     },
   }, votingController.vote);
+
+  fastify.patch('/elections/:id', votingController.updateElection);
+  fastify.delete('/elections/:id', votingController.deleteElection);
 }

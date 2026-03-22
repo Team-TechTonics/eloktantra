@@ -57,4 +57,16 @@ export class VotingController {
       txHash: vote.blockchain_tx_hash,
     });
   };
+
+  updateElection = async (request: FastifyRequest<{ Params: { id: string }; Body: any }>, reply: FastifyReply) => {
+    const { id } = request.params;
+    const election = await this.votingService.updateElection(id, request.body);
+    return reply.send({ success: true, election });
+  };
+
+  deleteElection = async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
+    const { id } = request.params;
+    await this.votingService.deleteElection(id);
+    return reply.send({ success: true, message: 'Election deleted' });
+  };
 }

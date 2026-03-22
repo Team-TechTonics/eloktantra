@@ -45,11 +45,12 @@ export default function ElectionsPage() {
     if (!deleteId) return;
     try {
       await backendAPI.delete(`/election/${deleteId}`);
-      toast.success('Election deleted');
+      toast.success('Election deleted successfully');
       setDeleteId(null);
       fetchElections();
-    } catch (error) {
-      toast.error('Failed to delete');
+    } catch (error: any) {
+      console.error('DELETE_ELECTION_ERROR:', error.response?.data || error.message);
+      toast.error(error.response?.data?.message || 'Failed to delete');
     }
   };
 
@@ -129,14 +130,14 @@ export default function ElectionsPage() {
         <div className="flex items-center space-x-2">
           {e.status !== 'ACTIVE' && (
             <button 
-              onClick={() => handleActivate(e.id)}
+              onClick={() => handleActivate(e._id || e.id)}
               className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-[10px] font-black uppercase tracking-widest rounded-lg flex items-center shadow-lg shadow-green-600/10 transition-all hover:scale-105"
             >
               <Power className="w-3 h-3 mr-1.5" /> Activate
             </button>
           )}
           <button 
-            onClick={() => setDeleteId(e.id)}
+            onClick={() => setDeleteId(e._id || e.id)}
             className="p-2.5 hover:bg-red-50 text-red-600 rounded-xl transition-all hover:scale-110"
           >
             <Trash2 className="w-4 h-4" />

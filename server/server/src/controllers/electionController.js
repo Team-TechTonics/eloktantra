@@ -86,8 +86,10 @@ const getElectionById = async (req, res) => {
         }))
       }
     });
-  } catch (error) {
-    console.error('Error fetching election by ID:', error);
+    res.status(500).json({ error: 'Failed to fetch election' });
+  }
+};
+
 const updateElection = async (req, res) => {
   try {
     const { id } = req.params;

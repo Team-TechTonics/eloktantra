@@ -56,6 +56,7 @@ export interface Constituency {
 
 export interface Election {
   id: string;
+  _id?: string;
   title: string;
   status: 'ACTIVE' | 'INACTIVE' | 'ENDED';
   start_date: string;

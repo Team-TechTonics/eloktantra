@@ -166,4 +166,22 @@ export class VotingService {
       throw error;
     }
   }
+
+  async updateElection(id: string, data: any) {
+    const { data: election, error } = await this.supabase
+      .from('elections')
+      .update(data)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error || !election) throw badRequest(error?.message || 'Unable to update election');
+    return election;
+  }
+
+  async deleteElection(id: string) {
+    const { error } = await this.supabase.from('elections').delete().eq('id', id);
+    if (error) throw badRequest(error.message);
+    return { success: true };
+  }
 }
