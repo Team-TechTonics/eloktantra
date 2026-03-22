@@ -86,8 +86,31 @@ const getUsers = async (req, res) => {
   }
 };
 
+const login = async (req, res) => {
+  const { email, password } = req.body;
+  
+  // Hardcoded for Admin Portal demo/setup as seen in eloktantra-admin/.env.local
+  // Email: admin@eloktantra.in, Password: Admin@2024
+  if (email === 'admin@eloktantra.in' && password === 'Admin@2024') {
+    const token = jwt.sign({ email, role: 'ADMIN' }, JWT_SECRET, { expiresIn: '1h' });
+    return res.json({
+      success: true,
+      token: token,
+      user: {
+        id: 'admin-id',
+        name: 'System Administrator',
+        email: 'admin@eloktantra.in',
+        role: 'ADMIN'
+      }
+    });
+  }
+
+  res.status(401).json({ success: false, error: 'Invalid credentials' });
+};
+
 module.exports = {
   digilockerCallback,
   faceVerify,
-  getUsers
+  getUsers,
+  login
 };

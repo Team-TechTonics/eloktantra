@@ -39,10 +39,10 @@ export default function DashboardPage() {
         }
         
         let voteCount = 0;
-        if (activeElection.id) {
-          // Trying /vote/count/:id or similar documented sync path
-          const vRes = await backendAPI.get(`/vote/count/${activeElection.id}`).catch(() => ({ data: 0 }));
-          voteCount = vRes.data;
+        if (activeElection._id || activeElection.id) {
+          const vRes = await backendAPI.get(`/vote/count/${activeElection._id || activeElection.id}`).catch(() => ({ data: 0 }));
+          // Handle object response { total, committed, pending } or simple number
+          voteCount = vRes.data?.total !== undefined ? vRes.data.total : (typeof vRes.data === 'number' ? vRes.data : 0);
         }
 
         setStats({

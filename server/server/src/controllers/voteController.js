@@ -48,6 +48,24 @@ const generateVotingToken = async (req, res) => {
     res.status(500).json({ error: 'Token generation failed' });
   }
 };
+const castVote = async (req, res) => {
+  try {
+    const { electionId, tokenHash, encryptedVote } = req.body;
+    
+    // Mock successful vote submission for local testing
+    // In production, this would involve blockchain interaction
+    const txHash = `0x${Math.random().toString(16).slice(2, 66)}`;
+    
+    res.json({
+      success: true,
+      message: 'Vote successfully recorded on ledger',
+      txHash: txHash
+    });
+  } catch (error) {
+    console.error('Vote submission failed:', error);
+    res.status(500).json({ error: 'Failed to record vote' });
+  }
+};
 
 module.exports = {
   evaluateRisk,

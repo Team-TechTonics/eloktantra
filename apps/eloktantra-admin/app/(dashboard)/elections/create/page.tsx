@@ -14,8 +14,9 @@ export default function CreateElectionPage() {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    start_date: '',
-    end_date: '',
+    constituency: 'National',
+    start_time: '',
+    end_time: '',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -24,10 +25,11 @@ export default function CreateElectionPage() {
     try {
       // Documentation specifies /election/create for Admin
       await backendAPI.post('/election/create', formData);
-      toast.success('Election initialized on NestJS Backend');
+      toast.success('Election initialized on backend');
       router.push('/elections');
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to initialize election on Remote Backend');
+      console.error('CREATE_ELECTION_ERROR:', error);
+      toast.error(error.response?.data?.message || 'Failed to initialize election');
     } finally {
       setIsSubmitting(false);
     }
@@ -64,6 +66,17 @@ export default function CreateElectionPage() {
             />
           </div>
 
+          <div className="space-y-2">
+            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Constituency / Region</label>
+            <input 
+              required
+              value={formData.constituency}
+              onChange={(e) => setFormData({ ...formData, constituency: e.target.value })}
+              className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none transition-all font-bold text-gray-900"
+              placeholder="e.g. National, New Delhi, etc."
+            />
+          </div>
+
           <div className="grid grid-cols-2 gap-6">
             <div className="space-y-2">
               <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Polling Start</label>
@@ -72,8 +85,8 @@ export default function CreateElectionPage() {
                 <input 
                   type="date"
                   required
-                  value={formData.start_date}
-                  onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                  value={formData.start_time}
+                  onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
                   className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none transition-all font-bold text-gray-900"
                 />
               </div>
@@ -85,8 +98,8 @@ export default function CreateElectionPage() {
                 <input 
                   type="date"
                   required
-                  value={formData.end_date}
-                  onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+                  value={formData.end_time}
+                  onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
                   className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none transition-all font-bold text-gray-900"
                 />
               </div>

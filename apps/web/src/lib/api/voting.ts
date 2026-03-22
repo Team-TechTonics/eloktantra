@@ -38,20 +38,21 @@ const DEMO_ELECTION: ElectionDetail = {
 
 export const fetchElections = async (): Promise<Election[]> => {
   try {
-    const { data } = await apiClient.get('/election/active');
-    // Handle both cases where data is the election object or wrapped in an election property
-    const activeElection = data.election || data;
-    return activeElection ? [activeElection] : [DEMO_ELECTION];
+    const { data } = await apiClient.get('/elections');
+    // Handle both wrapped and flat arrays
+    const elections = data.elections || data.data || (Array.isArray(data) ? data : []);
+    return elections.length > 0 ? elections : [DEMO_ELECTION];
   } catch (error) {
-    console.warn('Failed to fetch active election from backend, using Demo Data:', error);
+    console.warn('Failed to fetch elections from backend, using Demo Data:', error);
     return [DEMO_ELECTION];
   }
 };
 
 export const fetchElectionById = async (id: string): Promise<ElectionDetail> => {
   try {
-    const { data } = await apiClient.get(`/voting/elections/${id}`);
-    return data.election || DEMO_ELECTION;
+    const { data } = await apiClient.get(`/elections/${id}`);
+    const election = data.election || data.data || data;
+    return election || DEMO_ELECTION;
   } catch (error) {
     console.warn('Failed to fetch election details from backend, using Demo Data:', error);
     return DEMO_ELECTION;
@@ -60,8 +61,12 @@ export const fetchElectionById = async (id: string): Promise<ElectionDetail> => 
 
 export const generateVotingToken = async (params: { voterId: string; electionId: string }): Promise<string> => {
   try {
-    const { data } = await apiClient.post('/auth/login', params);
-    return data.access_token || data.tokenHash || data.token || 'demo-token-' + Date.now();
+    // Standardizing on /generate-token for voters
+    const { data } = await apiClient.post('/generate-token', {
+      userId: params.voterId,
+      electionId: params.electionId
+    });
+    return data.token || data.access_token || 'demo-token-' + Date.now();
   } catch (error) {
     console.warn('Failed to generate token, returning DEMO token:', error);
     return 'demo-token-' + Date.now();

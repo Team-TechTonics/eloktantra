@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const ElectionSchema = new mongoose.Schema({
   title: { type: String, required: true },
-  constituency: { type: String, required: true },
+  constituency: { type: String, required: false, default: 'National' },
   start_time: { type: Date, required: true },
   end_time: { type: Date, required: true },
   status: { type: String, enum: ['UPCOMING', 'ACTIVE', 'COMPLETED', 'ENDED'], default: 'UPCOMING' },

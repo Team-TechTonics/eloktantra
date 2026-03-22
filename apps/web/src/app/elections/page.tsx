@@ -2,37 +2,23 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-
-interface ElectionItem {
-  id: string;
-  name: string;
-}
-
-interface ElectionCategory {
-  category: string;
-  items: ElectionItem[];
-}
+import { CheckCircle2, ArrowRight, ShieldCheck, Info } from 'lucide-react';
 
 export default function ElectionsPage() {
   const router = useRouter();
-  const [categories, setCategories] = useState<ElectionCategory[]>([]);
+  const [elections, setElections] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // const hasToken = localStorage.getItem('voting_token') || sessionStorage.getItem('voting_token');
-    // if (!hasToken) {
-    //   router.push('/vote');
-    // }
-
     const fetchElections = async () => {
       try {
-        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://backend-elokantra.onrender.com';
         const response = await fetch(`${baseUrl}/elections`);
         const result = await response.json();
-        if (result.success) {
-          setCategories(result.data);
-        }
+        
+        // Handle various backend response formats
+        const electionsData = result.elections || result.data || (Array.isArray(result) ? result : []);
+        setElections(electionsData);
       } catch (error) {
         console.error("Error fetching elections:", error);
       } finally {
@@ -43,59 +29,131 @@ export default function ElectionsPage() {
     fetchElections();
   }, [router]);
 
+  const formatDate = (dateString: string) => {
+    if (!dateString) return "TBD";
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return "Ending Soon";
+    return date.toLocaleDateString('en-IN', { 
+      day: '2-digit', 
+      month: 'short', 
+      year: 'numeric' 
+    });
+  };
+
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-black">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center space-y-4">
           <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-gray-400 font-black uppercase tracking-widest text-xs">Loading Elections Data...</p>
+          <p className="text-muted font-black uppercase tracking-widest text-[10px]">Syncing with Ledger...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-12 md:py-20">
-      <div className="max-w-6xl mx-auto">
-        <header className="mb-16 text-center">
-            <div className="flex justify-center mb-6">
-                <span className="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
-                    Elections Browser
-                </span>
-            </div>
-          <h1 className="text-4xl md:text-7xl font-black mb-4 orange-text-gradient uppercase tracking-tight leading-none">Global Elections</h1>
-          <p className="text-gray-400 font-medium text-sm md:text-xl max-w-2xl mx-auto">
-            Explore democratic processes and view candidates for each verified election.
+    <div className="min-h-screen bg-background text-foreground selection:bg-primary/30">
+      <div className="container mx-auto px-4 py-16 md:py-24 max-w-7xl">
+        {/* Header Section */}
+        <header className="mb-20 text-center space-y-6 animate-in fade-in slide-in-from-top-4 duration-700">
+          <h1 className="text-5xl md:text-8xl font-black uppercase tracking-tight">
+            <span className="orange-text-gradient">
+              Active Elections
+            </span>
+          </h1>
+          <p className="text-muted font-medium text-sm md:text-lg max-w-2xl mx-auto leading-relaxed uppercase tracking-wide">
+            Participate in secure, anonymous, and blockchain-verified voting. 
+            <span className="block text-foreground/70 mt-1">Your vote is your power.</span>
           </p>
         </header>
 
-        {categories.length === 0 ? (
-          <div className="text-center py-20 text-gray-500">No elections found.</div>
-        ) : (
-          categories.map((cat, idx) => (
-            <section key={idx} className="mb-20">
-              <div className="flex items-center space-x-4 mb-8">
-                  <h2 className="text-2xl md:text-4xl font-black text-white uppercase tracking-tighter">{cat.category}</h2>
-                  <div className="h-1 flex-grow bg-gradient-to-r from-primary/50 to-transparent rounded-full opacity-20" />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                  {cat.items.map(election => (
-                    <div key={election.id} className="group glass-card overflow-hidden transition-all duration-300 sm:hover:-translate-y-2 border-white/5 hover:border-primary/20 flex flex-col cursor-pointer" onClick={() => router.push(`/elections/${election.id}`)}>
-                      <div className="p-6 md:p-8 flex-grow flex items-center h-full min-h-[160px]">
-                        <h2 className="text-xl md:text-2xl font-black text-white mb-2 uppercase tracking-tight leading-tight group-hover:text-primary transition-colors">{election.name}</h2>
-                      </div>
-                      
-                      <div className="flex flex-col">
-                        <div className="w-full py-4 text-center font-black uppercase tracking-widest transition-all text-xs bg-secondary/50 text-gray-400 group-hover:text-white border-t border-white/5 group-hover:bg-primary group-hover:border-primary">
-                          View Candidates →
+        {/* Elections Grid */}
+        <div className="flex justify-center">
+            {elections.length === 0 ? (
+                <div className="text-center py-20 glass-card w-full max-w-2xl">
+                    <Info className="w-12 h-12 text-muted mx-auto mb-4" />
+                    <p className="text-muted font-bold uppercase tracking-widest text-sm">No active voting windows found.</p>
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 w-full">
+                {elections.map((election, idx) => (
+                    <div 
+                    key={election.id || election._id || idx} 
+                    className="group relative glass-card rounded-[2.5rem] overflow-hidden transition-all duration-500 hover:border-primary/30 hover:shadow-[0_0_50px_-12px_rgba(255,107,44,0.15)] flex flex-col animate-in fade-in zoom-in-95 duration-500"
+                    style={{ animationDelay: `${idx * 100}ms` }}
+                    >
+                    <div className="p-8 md:p-10 flex-grow space-y-8">
+                        {/* Top Bar */}
+                        <div className="flex justify-between items-start">
+                        <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center border border-primary/20 group-hover:scale-110 transition-transform duration-500">
+                            <CheckCircle2 className="w-6 h-6 text-primary" />
                         </div>
-                      </div>
+                        <div className="px-4 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
+                            <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">
+                            {election.status || 'ACTIVE'}
+                            </span>
+                        </div>
+                        </div>
+
+                        {/* Election Title */}
+                        <div className="space-y-1">
+                        <h2 className="text-3xl md:text-4xl font-black text-foreground group-hover:orange-text-gradient transition-all duration-500">
+                            {election.title || election.name || 'Untitled'}
+                        </h2>
+                        </div>
+
+                        {/* Meta Data */}
+                        <div className="space-y-6 pt-2">
+                        <div className="space-y-1.5">
+                            <p className="text-[10px] font-bold text-muted uppercase tracking-[0.2em]">Constituency</p>
+                            <p className="text-primary/80 font-bold text-sm tracking-wide">
+                            {election.constituency || 'National / General'}
+                            </p>
+                        </div>
+                        
+                        <div className="w-full h-px bg-border" />
+
+                        <div className="space-y-1.5">
+                            <p className="text-[10px] font-bold text-muted uppercase tracking-[0.2em]">Ends On</p>
+                            <p className="text-foreground/60 font-bold text-sm tracking-wide italic">
+                            {formatDate(election.end_time || election.end_date)}
+                            </p>
+                        </div>
+                        </div>
                     </div>
-                  ))}
-              </div>
-            </section>
-          ))
-        )}
+
+                    {/* CTA Button */}
+                    <div className="px-2 pb-2">
+                        <button 
+                            onClick={() => router.push(`/vote/${election.id || election._id}`)}
+                            className="w-full bg-primary hover:bg-accent text-white py-6 flex items-center justify-center space-x-3 transition-all duration-300 rounded-[2rem] shadow-xl shadow-primary/10"
+                        >
+                            <span className="text-sm font-black uppercase tracking-[0.15em]">Cast Your Vote</span>
+                            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                        </button>
+                    </div>
+
+                    {/* Developer Note */}
+                    <div className="py-4 text-center">
+                        <span className="text-[9px] font-black text-primary/40 uppercase tracking-[0.3em]">
+                        Developer: Test Vote (No Limits)
+                        </span>
+                    </div>
+                    </div>
+                ))}
+                </div>
+            )}
+        </div>
+
+        {/* Footer Link */}
+        <footer className="mt-24 text-center animate-in fade-in slide-in-from-bottom-4 duration-1000">
+          <button className="inline-flex items-center space-x-3 px-8 py-4 bg-surface hover:bg-surface/80 border border-border rounded-full transition-all group scale-100 hover:scale-105 active:scale-95 shadow-lg">
+            <ShieldCheck className="w-5 h-5 text-primary" />
+            <span className="text-[11px] font-black text-muted uppercase tracking-[0.2em] group-hover:text-foreground transition-colors">
+              Verify Your Past Vote Hash
+            </span>
+          </button>
+        </footer>
       </div>
     </div>
   );

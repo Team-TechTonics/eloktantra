@@ -14,15 +14,13 @@ const electionRoutes = require('./routes/electionRoutes');
 
 const app = express();
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+  origin: true,
+  credentials: true
+}));
 app.use(morgan('dev'));
 
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100 // limit each IP to 100 requests per windowMs
-});
-
-app.use(limiter);
+app.get('/ping', (req, res) => res.json({ status: 'ok', time: new Date() }));
 
 // Database Connection with Fallback
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/eloktantra';
@@ -56,8 +54,8 @@ app.get('/auth/users', authController.getUsers);
 app.post('/verify-face', authController.faceVerify);
 app.post('/risk/evaluate', voteController.evaluateRisk);
 app.post('/generate-token', voteController.generateVotingToken);
-app.get('/vote/count/:id', (req, res) => res.json(0)); // Mock for dashboard stats
-app.post('/auth/login', voteController.generateVotingToken); // Alias for frontend
+app.get('/vote/count/:id', (req, res) => res.json(0)); 
+app.post('/auth/login', authController.login); // Proper admin login
 app.post('/auth/login', voteController.generateVotingToken); // Alias for frontend
 app.post('/voter/verify', authController.faceVerify); // Alias for face verify
 app.post('/vote/submit', voteController.castVote); // New vote submission route

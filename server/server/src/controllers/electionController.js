@@ -28,10 +28,27 @@ const getElections = async (req, res) => {
 
 const createElection = async (req, res) => {
   try {
-    const election = await electionRepository.create(req.body);
+    const data = { ...req.body };
+    
+    // Map frontend 'start_date' to model 'start_time'
+    if (data.start_date && !data.start_time) {
+      data.start_time = data.start_date;
+    }
+    // Map frontend 'end_date' to model 'end_time'
+    if (data.end_date && !data.end_time) {
+      data.end_time = data.end_date;
+    }
+
+    // Default constituency if missing (frontend form doesn't have it yet)
+    if (!data.constituency) {
+      data.constituency = 'National';
+    }
+
+    const election = await electionRepository.create(data);
     res.status(201).json({ success: true, election });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to create election' });
+    console.error('Error creating election:', error);
+    res.status(500).json({ error: 'Failed to create election', message: error.message });
   }
 };
 
@@ -69,9 +86,33 @@ const getElectionById = async (req, res) => {
         }))
       }
     });
+    res.status(500).json({ error: 'Failed to fetch election' });
+  }
+};
+
+const updateElection = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const data = { ...req.body };
+    
+    // Map dates
+    if (data.start_date && !data.start_time) data.start_time = data.start_date;
+    if (data.end_date && !data.end_time) data.end_time = data.end_date;
+
+    const election = await electionRepository.update(id, data);
+    res.json({ success: true, election });
   } catch (error) {
-    console.error('Error fetching election by ID:', error);
-    res.status(500).json({ error: 'Failed to fetch election details' });
+    res.status(500).json({ error: 'Failed to update election' });
+  }
+};
+
+const deleteElection = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await electionRepository.deleteById(id);
+    res.json({ success: true, message: 'Election deleted' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete election' });
   }
 };
 
@@ -80,5 +121,7 @@ module.exports = {
   getElections,
   createElection,
   updateElectionStatus,
-  getElectionById
+  getElectionById,
+  updateElection,
+  deleteElection
 };
