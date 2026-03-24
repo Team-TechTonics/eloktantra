@@ -5,7 +5,8 @@ import { getSession } from 'next-auth/react';
 const CONTENT_API_URL = process.env.NEXT_PUBLIC_WEB_API_URL || 'http://localhost:3000';
 
 // URL for Voting (Blockchain/Ledger) - handled by the Render backend
-const VOTING_API_URL = 'https://backend-elokantra.onrender.com';
+const VOTING_API_URL = process.env.NEXT_PUBLIC_VOTING_API_URL || 
+                      (process.env.NODE_ENV === 'development' ? 'http://localhost:5001' : 'https://backend-elokantra.onrender.com');
 
 /** 
  * CONTENT API CLIENT (MongoDB)

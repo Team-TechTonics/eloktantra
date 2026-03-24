@@ -4,8 +4,13 @@ import { useState, useEffect } from 'react';
 import StatsCard from '@/components/dashboard/StatsCard';
 import PageHeader from '@/components/layout/PageHeader';
 import { Users, Flag, Map, Vote, Activity, Hash, Clock } from 'lucide-react';
-import axios from 'axios';
-import contentAPI from '@/lib/api'; // This is PORT 3000
+import { 
+  votingAPI, 
+  adminGetCandidates, 
+  adminGetParties, 
+  adminGetConstituencies, 
+  adminGetActiveElection 
+} from '@/lib/api';
 import RecentActivity from '@/components/dashboard/RecentActivity';
 import VoteChart from '@/components/dashboard/VoteChart';
 
@@ -27,24 +32,23 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        // Explicitly calling the REMOTE content source (Port 3000) 
-        // Handles hierarchical data retrieval
         const [cRes, pRes, coRes, eRes] = await Promise.all([
-          contentAPI.get('/api/candidates'),
-          contentAPI.get('/api/admin/party'), // Unified party management
-          contentAPI.get('/api/admin/constituency'),
-          contentAPI.get('/api/election/active'),
+          adminGetCandidates({}),
+          adminGetParties(), // Unified party management
+          adminGetConstituencies(),
+          adminGetActiveElection(),
         ]);
 
-        const activeElection = eRes.data || { title: 'None Found', id: null };
+        const activeElection = eRes.data.data || eRes.data || { title: 'None Found', id: null };
         
         let voteCount = 0;
-        if (activeElection._id || activeElection.id) {
+        const electionId = activeElection._id || activeElection.id;
+        if (electionId) {
            try {
-               const vRes = await contentAPI.get(`/api/admin/results?electionId=${activeElection._id || activeElection.id}`);
+               const vRes = await votingAPI.get(`/api/admin/results?electionId=${electionId}`);
                voteCount = vRes.data?.totalVotesCast || 0;
            } catch (vErr) {
-               console.warn("Unable to fetch real-time vote count");
+               console.warn("Unable to fetch real-time vote count from Render");
            }
         }
 
