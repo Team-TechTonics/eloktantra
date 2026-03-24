@@ -12,7 +12,8 @@ export interface Candidate {
 }
 
 export interface Party {
-  _id: string;
+  id: string;
+  _id?: string;
   name: string;
   abbreviation: string;
   logo_url: string;
@@ -24,8 +25,8 @@ export interface Party {
 
 
 export interface Constituency {
-  _id: string;
-  id?: string;
+  id: string;
+  _id?: string;
   name: string;
   electionId: string;
   state: string;
@@ -34,35 +35,41 @@ export interface Constituency {
 export interface Election {
   id: string;
   _id?: string;
-  title: string;
+  name: string; // Standardized with NestJS
+  title?: string; // Alias for backward compatibility
   type: 'General' | 'State';
-  startDate: string;
-  endDate: string;
-  isActive: boolean;
-  constituency?: string; // fallback for legacy
+  start_time: string; // Standardized with NestJS
+  startDate?: string; // Alias
+  end_time: string; // Standardized with NestJS
+  endDate?: string; // Alias
+  is_active: boolean; // Standardized with NestJS
+  isActive?: boolean; // Alias
+  constituency?: string;
 }
 
 export interface Issue {
-  _id: string;
-  id?: string;
+  id: string;
+  _id?: string;
   title: string;
   description: string;
   constituencyId: string;
   electionId: string;
+  reportedCount?: number;
 }
 
 export interface Manifesto {
-  _id: string;
-  id?: string;
-  candidateId: string;
+  id: string;
+  _id?: string;
+  candidateId: any; // Can be string or popped object
   electionId: string;
-  constituencyId: string;
+  constituencyId: any; // Can be string or popped object
   title: string;
-  description: string;
+  content: string;
 }
 
 export interface Voter {
-  _id: string;
+  id: string;
+  _id?: string;
   name: string;
   phone: string;
   voterId: string;
@@ -85,8 +92,8 @@ export interface Vote {
 }
 
 export interface AuditLog {
-  _id: string;
-  id?: string;
+  id: string;
+  _id?: string;
   event_type: string;
   detail: string;
   booth_id: string;
@@ -95,8 +102,8 @@ export interface AuditLog {
 }
 
 export interface Officer {
+  id: string;
   _id?: string;
-  id?: string;
   name: string;
   username: string;
   booth_id: string;

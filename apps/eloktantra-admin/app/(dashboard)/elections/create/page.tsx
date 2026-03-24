@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import PageHeader from '@/components/layout/PageHeader';
-import { Calendar, Save, X, Info, Globe, MapPin } from 'lucide-react';
-import { adminCreateElection, votingAPI, votingSyncElection } from '@/lib/api';
+import { Calendar, Save, X, Info, Globe } from 'lucide-react';
+import { adminCreateElection } from '@/lib/api';
 import toast from 'react-hot-toast';
 
 export default function CreateElectionPage() {
@@ -12,42 +12,37 @@ export default function CreateElectionPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
-    type: 'General', // Added type as per hierarchy rules
+    code: '', // Explicit unique code
+    type: 'General',
     startDate: '',
     endDate: '',
-    isActive: false, // Start as inactive
+    isActive: false,
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      // 1. Create in MongoDB (Content Source)
+      // 1. Initialized in Render Backend (Source of Truth)
       await adminCreateElection({
         title: formData.title,
+        code: formData.code,
         type: formData.type as 'General' | 'State',
-        startDate: formData.startDate,
-        endDate: formData.endDate,
+        start_time: formData.startDate, // Explicitly map to NestJS expectation
+        end_time: formData.endDate,     // Explicitly map to NestJS expectation
         isActive: formData.isActive
       });
 
-      // 2. Mock Ledger Deployment (Render)
-      try {
-        await votingAPI.post('/election/create', {
-          title: formData.title,
-          constituency: 'National', // Root scope
-          start_time: formData.startDate,
-          end_time: formData.endDate
-        });
-      } catch (bcError) {
-        console.warn('Ledger deployment deferred');
-      }
-
-      toast.success('Election initialized across all layers');
+      toast.success('Election initialized in secure ledger');
       router.push('/elections');
     } catch (error: any) {
       console.error('CREATE_ELECTION_ERROR:', error);
-      toast.error('Failed to create election hierarchy');
+      
+      if (error?.response?.status === 409) {
+        toast.error('Election code already exists! Choose a unique ID.');
+      } else {
+        toast.error('Failed to initialize election. Check connection.');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -66,15 +61,28 @@ export default function CreateElectionPage() {
         </div>
 
         <div className="space-y-6">
-          <div className="space-y-2">
-            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Election Title</label>
-            <input 
-              required
-              value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none transition-all font-bold text-gray-900"
-              placeholder="e.g. India General Elections 2024"
-            />
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Election Code (Unique ID)</label>
+              <input 
+                required
+                value={formData.code}
+                onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase().replace(/\s+/g, '_') })}
+                className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none transition-all font-mono font-bold text-amber-600 uppercase"
+                placeholder="e.g. INDIA_GEN_2024"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Election Title</label>
+              <input 
+                required
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none transition-all font-bold text-gray-900"
+                placeholder="e.g. India General Elections 2024"
+              />
+            </div>
           </div>
 
           <div className="space-y-2">

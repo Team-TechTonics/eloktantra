@@ -22,7 +22,9 @@ export default function PartiesPage() {
   const fetchParties = async () => {
     try {
       const { data } = await adminGetParties();
-      setParties(data.data || []);
+      // NestJS returns the array directly
+      const list = Array.isArray(data) ? data : (data.data || []);
+      setParties(list);
     } catch (error) {
       toast.error('Failed to load national party records');
     } finally {
@@ -76,7 +78,7 @@ export default function PartiesPage() {
             <Edit2 className="w-4 h-4" />
           </button>
           <button 
-            onClick={() => setIsDeleting(p._id)}
+            onClick={() => setIsDeleting(p.id || (p as any)._id)}
             className="p-2 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-lg transition-colors"
           >
             <Trash2 className="w-4 h-4" />

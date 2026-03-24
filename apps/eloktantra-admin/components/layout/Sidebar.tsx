@@ -5,9 +5,9 @@ import { usePathname } from 'next/navigation';
 import { 
   LayoutDashboard, Users, Flag, Map, 
   Vote, UserCheck, Activity, Shield, 
-  FileText, LogOut, AlertOctagon, BookOpen 
+  FileText, LogOut, AlertOctagon, BookOpen,
+  Lock
 } from 'lucide-react';
-import { signOut, useSession } from 'next-auth/react';
 
 const navItems = [
   { label: 'Dashboard', icon: LayoutDashboard, href: '/dashboard' },
@@ -20,6 +20,7 @@ const navItems = [
   { label: 'VOTING', type: 'header' },
   { label: 'Elections', icon: Vote, href: '/elections' },
   { label: 'Voters', icon: UserCheck, href: '/voters' },
+  { label: 'Counting Center', icon: Lock, href: '/counting' },
   { label: 'Votes Monitor', icon: Activity, href: '/votes' },
   { label: 'SYSTEM', type: 'header' },
   { label: 'Booth Officers', icon: Shield, href: '/officers' },
@@ -29,7 +30,6 @@ const navItems = [
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const { data: session } = useSession();
 
   return (
     <aside className="fixed left-0 top-0 h-screen w-64 bg-gray-900 text-gray-400 flex flex-col z-50">
@@ -69,16 +69,9 @@ export default function Sidebar() {
 
       <div className="p-4 mt-auto border-t border-white/5">
         <div className="bg-white/5 rounded-2xl p-4 mb-2">
-          <div className="text-xs font-bold text-gray-400 truncate">{session?.user?.email}</div>
+          <div className="text-xs font-bold text-gray-400 truncate">admin@eloktantra.gov</div>
           <div className="text-[10px] text-gray-600 font-bold uppercase mt-1">System Administrator</div>
         </div>
-        <button
-          onClick={() => signOut({ callbackUrl: '/login' })}
-          className="w-full flex items-center px-4 py-3 text-sm font-bold text-red-500 hover:bg-red-500/10 rounded-xl transition-all group"
-        >
-          <LogOut className="w-5 h-5 mr-3 group-hover:scale-110 transition-transform" />
-          Logout
-        </button>
       </div>
     </aside>
   );

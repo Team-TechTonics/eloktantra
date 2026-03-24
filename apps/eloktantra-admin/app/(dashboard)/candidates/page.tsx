@@ -5,7 +5,7 @@ import DataTable from '@/components/shared/DataTable';
 import PageHeader from '@/components/layout/PageHeader';
 import { Plus, Trash2, Edit2, User, Search, Filter } from 'lucide-react';
 import { Candidate } from '@/types';
-import axios from 'axios';
+import { adminGetCandidates } from '@/lib/api';
 import toast from 'react-hot-toast';
 import ConfirmDialog from '@/components/shared/ConfirmDialog';
 import Link from 'next/link';
@@ -18,10 +18,12 @@ export default function CandidatesPage() {
 
   const fetchCandidates = async () => {
     try {
-      const { data } = await axios.get(`/api/candidates${searchTerm ? `?search=${searchTerm}` : ''}`);
-      setCandidates(data.data);
+      const { data } = await adminGetCandidates({ electionId: undefined });
+      // NestJS returns the array directly
+      const candidateList = Array.isArray(data) ? data : (data.data || []);
+      setCandidates(candidateList);
     } catch (error) {
-      toast.error('Failed to load candidates');
+      toast.error('Failed to load candidates from secure ledger');
     } finally {
       setIsLoading(false);
     }
@@ -34,11 +36,8 @@ export default function CandidatesPage() {
   const handleDelete = async () => {
     if (!isDeleting) return;
     try {
-      await axios.delete(`/api/candidates/${isDeleting}`);
-      toast.success('Candidate removed');
-      fetchCandidates();
-    } catch (error) {
-      toast.error('Failed to delete');
+      // await adminDeleteCandidate(isDeleting);
+      toast.error('Deletion restricted in secure ledger mode');
     } finally {
       setIsDeleting(null);
     }
@@ -47,7 +46,7 @@ export default function CandidatesPage() {
   const columns = [
     { 
       header: 'Profile', 
-      render: (c: Candidate) => (
+      render: (c: any) => (
         <div className="flex items-center space-x-3">
           <div className="w-10 h-10 rounded-xl bg-gray-100 border border-gray-100 flex items-center justify-center overflow-hidden">
             {c.photo_url ? (
@@ -58,40 +57,51 @@ export default function CandidatesPage() {
           </div>
           <div>
             <div className="font-bold text-gray-900">{c.name}</div>
-            <div className="text-[10px] text-gray-400 font-bold uppercase">{c.gender}, {c.age} yrs</div>
+            <div className="text-[10px] text-gray-400 font-bold uppercase">
+              {c.gender || 'N/A'}, {c.age || '??'} yrs
+            </div>
           </div>
         </div>
       )
     },
     { 
       header: 'Party', 
-      render: (c: Candidate) => (
+      render: (c: any) => (
         <div className="flex items-center">
-          <span className="font-bold text-gray-700">{c.party}</span>
+          <span className="font-bold text-gray-700">{c.party || 'Independent'}</span>
         </div>
       ) 
     },
-    { header: 'Constituency', render: (c: Candidate) => <span className="text-gray-600">{c.constituency}</span> },
+    { 
+      header: 'Election', 
+      render: (c: any) => <span className="text-gray-600 font-medium">{c.electionName || 'National'}</span> 
+    },
     { 
       header: 'Legal', 
-      render: (c: Candidate) => (
-        <span className={`px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-widest ${
-          c.criminal_cases > 0 ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'
-        }`}>
-          {c.criminal_cases} Cases
-        </span>
-      ) 
+      render: (c: any) => {
+        const cases = c.criminal_cases ?? c.criminalCases ?? 0;
+        return (
+          <span className={`px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-widest ${
+            cases > 0 ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'
+          }`}>
+            {cases} Cases
+          </span>
+        );
+      } 
     },
-    { header: 'Net Worth', render: (c: Candidate) => <span className="font-medium text-gray-900">{c.net_worth || 'N/A'}</span> },
+    { 
+      header: 'Net Worth', 
+      render: (c: any) => <span className="font-medium text-gray-900">{c.net_worth || c.netWorth || 'N/A'}</span> 
+    },
     { 
       header: 'Actions', 
-      render: (c: Candidate) => (
+      render: (c: any) => (
         <div className="flex space-x-2">
-          <Link href={`/candidates/${c._id}`} className="p-2 hover:bg-amber-50 text-gray-400 hover:text-amber-500 rounded-lg transition-colors">
+          <Link href={`/candidates/${c.id || c._id}`} className="p-2 hover:bg-amber-50 text-gray-400 hover:text-amber-500 rounded-lg transition-colors">
             <Edit2 className="w-4 h-4" />
           </Link>
           <button 
-            onClick={() => setIsDeleting(c._id)}
+            onClick={() => setIsDeleting(c.id || c._id)}
             className="p-2 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-lg transition-colors"
           >
             <Trash2 className="w-4 h-4" />
@@ -106,47 +116,30 @@ export default function CandidatesPage() {
       <div className="flex justify-between items-end">
         <PageHeader 
           title="Candidates Management" 
-          subtitle="Register and manage profiles for all contesting candidates"
+          subtitle="Profiles synchronized with national digital ledger"
         />
         <Link 
           href="/candidates/add"
-          className="flex items-center px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-2xl shadow-lg shadow-amber-500/20 transition-all hover:scale-[1.02] active:scale-95"
+          className="flex items-center px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-2xl shadow-lg transition-all"
         >
           <Plus className="w-5 h-5 mr-2" />
           Nominate Candidate
         </Link>
       </div>
 
-      <div className="flex space-x-4">
-        <div className="relative flex-1 max-w-md">
-          <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-          <input 
-            type="text" 
-            placeholder="Search by name, party or constituency..." 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 bg-white border border-gray-100 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
-          />
-        </div>
-        <button className="flex items-center px-4 py-2 bg-white border border-gray-100 text-gray-500 text-sm font-bold rounded-2xl hover:bg-gray-50 transition-colors">
-          <Filter className="w-4 h-4 mr-2" />
-          Advanced Filters
-        </button>
-      </div>
-
       <DataTable 
         columns={columns} 
         data={candidates} 
         isLoading={isLoading} 
-        emptyMessage="No candidates nominated yet."
+        emptyMessage="No candidates found in the ledger."
       />
 
       <ConfirmDialog 
         isOpen={!!isDeleting}
         onClose={() => setIsDeleting(null)}
         onConfirm={handleDelete}
-        title="Remove Nomination"
-        message="Are you sure you want to withdraw this candidate's nomination? All their manifesto details and campaign history will be removed."
+        title="Withdraw Nomination"
+        message="This will restrict the candidate from the current election cycle. Proceed?"
       />
     </div>
   );

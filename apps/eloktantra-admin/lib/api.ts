@@ -1,45 +1,36 @@
+
 import axios from 'axios';
 import { getSession } from 'next-auth/react';
 
-// URL for Content (MongoDB) - handled by our main Next.js web app
-const CONTENT_API_URL = process.env.NEXT_PUBLIC_WEB_API_URL || 'http://localhost:3000';
-
-// URL for Voting (Blockchain/Ledger) - handled by the Render backend
-const VOTING_API_URL = 'https://backend-elokantra.onrender.com';
+// URL for All Operations (Render Backend)
+const BASE_API_URL = process.env.NEXT_PUBLIC_WEB_API_URL || 'https://backend-elokantra.onrender.com';
 
 /** 
- * CONTENT API CLIENT (MongoDB)
+ * UNIFIED API CLIENT (Render)
  */
-const contentAPI = axios.create({
-  baseURL: CONTENT_API_URL,
-  timeout: 15000,
+const api = axios.create({
+  baseURL: BASE_API_URL,
+  timeout: 60000, // Increased to 60s for Render cold starts
 });
 
-contentAPI.interceptors.request.use(async (config) => {
+api.interceptors.request.use(async (config) => {
   const session: any = await getSession();
+
+  // Set Admin Key for Authorization
   const adminKey = session?.adminKey || process.env.ADMIN_SECRET_KEY || 'eLoktantra-AdminPortal-SecretKey-2024';
   config.headers['x-admin-key'] = adminKey;
-  return config;
-});
 
-/**
- * VOTING API CLIENT (Render / Blockchain)
- */
-const votingAPI = axios.create({
-  baseURL: VOTING_API_URL,
-  timeout: 15000,
-});
-
-votingAPI.interceptors.request.use(async (config) => {
-  const session: any = await getSession();
+  // Set Bearer Token if available
   if (session?.backendToken) {
     config.headers.Authorization = `Bearer ${session.backendToken}`;
   }
+
   return config;
 });
 
-export { contentAPI, votingAPI };
-export default contentAPI; // default to content for legacy compatibility
+export const contentAPI = api;
+export const votingAPI = api;
+export default api;
 
 // ─── CONTENT OPERATIONS (MongoDB) ───────────────────────────────────────────
 
@@ -90,13 +81,13 @@ export const adminCreateElection = (data: any) =>
 
 /** Toggle election status in MongoDB */
 export const adminActivateElection = (id: string) =>
-  votingAPI.post('/api/admin/election/status', { id, isActive: true });
+  votingAPI.patch(`/admin/election/${id}/activate`);
 
 export const adminDeactivateElection = (id: string) =>
-  votingAPI.post('/api/admin/election/status', { id, isActive: false });
+  votingAPI.delete(`/admin/election/${id}`);
 
 export const adminGetActiveElection = () =>
-  votingAPI.get('/api/election/active');
+  votingAPI.get('/admin/election/active');
 
 // ─── VOTING OPERATIONS (Render - Ledger Only) ─────────────────────────────
 

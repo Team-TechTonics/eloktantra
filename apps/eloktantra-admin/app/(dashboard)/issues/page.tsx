@@ -24,7 +24,8 @@ export default function IssuesAdmin() {
   const fetchElections = async () => {
     try {
       const res = await adminGetElections();
-      setElections(res.data.elections || []);
+      const list = Array.isArray(res.data) ? res.data : (res.data.elections || res.data.data || []);
+      setElections(list);
     } catch (err) {
       toast.error('Failed to load elections');
     } finally {
@@ -35,7 +36,8 @@ export default function IssuesAdmin() {
   const fetchIssues = async () => {
     try {
       const res = await adminGetIssues();
-      setIssues(res.data.issues || []);
+      const list = Array.isArray(res.data) ? res.data : (res.data.issues || res.data.data || []);
+      setIssues(list);
     } catch (err) {
       toast.error('Failed to sync issues ledger');
     }
@@ -54,7 +56,8 @@ export default function IssuesAdmin() {
     const fetchCons = async () => {
       try {
         const res = await adminGetConstituencies(selectedElection);
-        setConstituencies(res.data.constituencies || []);
+        const list = Array.isArray(res.data) ? res.data : (res.data.constituencies || res.data.data || []);
+        setConstituencies(list);
         setSelectedConstituency('');
       } catch (err) {
         toast.error('Failed to load regions');
@@ -137,7 +140,7 @@ export default function IssuesAdmin() {
                     className="w-full h-14 bg-black border-2 border-white/10 rounded-2xl px-4 font-bold text-sm focus:border-orange-500 outline-none transition-all"
                 >
                     <option value="">Select Election</option>
-                    {elections.map(el => <option key={el._id} value={el._id}>{el.title}</option>)}
+                    {elections.map(el => <option key={el.id || el._id} value={el.id || el._id}>{el.title || el.name}</option>)}
                 </select>
               </div>
 
@@ -150,7 +153,7 @@ export default function IssuesAdmin() {
                     className="w-full h-14 bg-black border-2 border-white/10 rounded-2xl px-4 font-bold text-sm focus:border-orange-500 outline-none disabled:opacity-30 transition-all"
                 >
                     <option value="">Select Constituency</option>
-                    {constituencies.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
+                    {constituencies.map(c => <option key={c.id || c._id} value={c.id || c._id}>{c.name}</option>)}
                 </select>
               </div>
 
@@ -197,13 +200,13 @@ export default function IssuesAdmin() {
                     </div>
                 ) : (
                     issues.map((issue) => (
-                        <div key={issue._id} className="p-6 rounded-[2.5rem] bg-[#0c0c0c] border border-white/5 hover:border-orange-500/30 transition-all group">
+                        <div key={issue.id || (issue as any)._id} className="p-6 rounded-[2.5rem] bg-[#0c0c0c] border border-white/5 hover:border-orange-500/30 transition-all group">
                              <div className="flex justify-between items-start mb-4">
                                 <div className="p-3 bg-white/5 rounded-2xl group-hover:bg-orange-500/10 transition-colors">
                                     <Tag className="w-5 h-5 text-gray-400 group-hover:text-orange-500 transition-colors" />
                                 </div>
                                 <button 
-                                    onClick={() => handleDeleteIssue(issue._id)}
+                                    onClick={() => handleDeleteIssue(issue.id || (issue as any)._id)}
                                     className="p-2 opacity-0 group-hover:opacity-100 hover:bg-red-500/10 text-red-500 rounded-xl transition-all"
                                 >
                                     <Trash2 className="w-4 h-4" />

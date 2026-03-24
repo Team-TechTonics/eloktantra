@@ -26,7 +26,8 @@ export default function ManifestosAdmin() {
   const fetchInitialData = async () => {
     try {
       const res = await adminGetElections();
-      setElections(res.data.elections || []);
+      const list = Array.isArray(res.data) ? res.data : (res.data.elections || res.data.data || []);
+      setElections(list);
     } catch (err) {
       toast.error('Failed to load elections');
     } finally {
@@ -37,7 +38,8 @@ export default function ManifestosAdmin() {
   const fetchManifestos = async () => {
     try {
       const res = await adminGetManifestos();
-      setManifestos(res.data.manifestos || []);
+      const list = Array.isArray(res.data) ? res.data : (res.data.manifestos || res.data.data || []);
+      setManifestos(list);
     } catch (err) {
        console.error('Failed to sync manifesto ledger');
     }
@@ -56,7 +58,8 @@ export default function ManifestosAdmin() {
     const fetchCons = async () => {
       try {
         const res = await adminGetConstituencies(selectedElection);
-        setConstituencies(res.data.constituencies || []);
+        const list = Array.isArray(res.data) ? res.data : (res.data.constituencies || res.data.data || []);
+        setConstituencies(list);
         setSelectedConstituency('');
         setCandidates([]);
         setSelectedCandidate('');
@@ -75,7 +78,8 @@ export default function ManifestosAdmin() {
     const fetchCans = async () => {
       try {
         const res = await adminGetCandidates({ electionId: selectedElection, constituencyId: selectedConstituency });
-        setCandidates(res.data.candidates || []);
+        const list = Array.isArray(res.data) ? res.data : (res.data.candidates || res.data.data || []);
+        setCandidates(list);
         setSelectedCandidate('');
       } catch (err) {
         toast.error('Failed to load candidates');
@@ -162,7 +166,7 @@ export default function ManifestosAdmin() {
                     className="w-full h-14 bg-black border-2 border-white/10 rounded-2xl px-4 font-bold text-sm focus:border-emerald-500 outline-none transition-all"
                 >
                     <option value="">Select Election</option>
-                    {elections.map(el => <option key={el._id} value={el._id}>{el.title}</option>)}
+                    {elections.map(el => <option key={el.id || el._id} value={el.id || el._id}>{el.title || el.name}</option>)}
                 </select>
               </div>
 
@@ -175,7 +179,7 @@ export default function ManifestosAdmin() {
                     className="w-full h-14 bg-black border-2 border-white/10 rounded-2xl px-4 font-bold text-sm focus:border-emerald-500 outline-none disabled:opacity-30 transition-all"
                 >
                     <option value="">Select Constituency</option>
-                    {constituencies.map(c => <option key={c._id} value={c._id}>{c.name}</option>)}
+                    {constituencies.map(c => <option key={c.id || c._id} value={c.id || c._id}>{c.name}</option>)}
                 </select>
               </div>
 
@@ -188,7 +192,7 @@ export default function ManifestosAdmin() {
                     className="w-full h-14 bg-black border-2 border-white/10 rounded-2xl px-4 font-bold text-sm focus:border-emerald-500 outline-none disabled:opacity-30 transition-all"
                 >
                     <option value="">Select Candidate</option>
-                    {candidates.map(c => <option key={c._id} value={c._id}>{c.name} ({c.party})</option>)}
+                    {candidates.map(c => <option key={c.id || c._id} value={c.id || c._id}>{c.name} ({c.party})</option>)}
                 </select>
               </div>
 
@@ -239,10 +243,10 @@ export default function ManifestosAdmin() {
                     </div>
                 ) : (
                     manifestos.map((m) => (
-                        <div key={m._id} className="p-8 rounded-[3rem] bg-[#0c0c0c] border border-white/5 hover:border-emerald-500/30 transition-all group relative overflow-hidden">
+                        <div key={m.id || (m as any)._id} className="p-8 rounded-[3rem] bg-[#0c0c0c] border border-white/5 hover:border-emerald-500/30 transition-all group relative overflow-hidden">
                              <div className="absolute top-0 right-0 p-6">
                                 <button 
-                                    onClick={() => handleDeleteManifesto(m._id)}
+                                    onClick={() => handleDeleteManifesto(m.id || (m as any)._id)}
                                     className="p-3 bg-red-500/10 text-red-500 rounded-2xl opacity-0 group-hover:opacity-100 transition-all hover:bg-red-500 hover:text-white"
                                 >
                                     <Trash2 className="w-4 h-4" />
