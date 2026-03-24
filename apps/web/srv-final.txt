@@ -1,0 +1,1 @@
+mongodb://tonics_team_tech_db_user:8ldFgRXplJ3itScFF@ac-u3uvlhq-shard-00-00.bzfsujx.mongodb.net:27017,ac-u3uvlhq-shard-00-01.bzfsujx.mongodb.net:27017,ac-u3uvlhq-shard-00-02.bzfsujx.mongodb.net:27017/eloktantra?ssl=true&authSource=admin&retryWrites=true&w=majority

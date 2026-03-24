@@ -5,17 +5,36 @@ import DataTable from '@/components/shared/DataTable';
 import PageHeader from '@/components/layout/PageHeader';
 import { Activity, RefreshCw, AlertCircle, ExternalLink, CheckCircle2 } from 'lucide-react';
 import { Vote } from '@/types';
-import backendAPI from '@/lib/api';
+import backendAPI, { adminGetElections } from '@/lib/api';
 import toast from 'react-hot-toast';
 
 export default function VotesMonitorPage() {
   const [votes, setVotes] = useState<Vote[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState({ total: 0, pending: 0, committed: 0, failed: 0 });
+  const [elections, setElections] = useState<any[]>([]);
+  const [selectedElection, setSelectedElection] = useState<string>('');
+
+  const fetchInitialData = async () => {
+    try {
+      const { data } = await adminGetElections();
+      const list = data.elections || [];
+      setElections(list);
+      if (list.length > 0) {
+        setSelectedElection(list[0]._id);
+      } else {
+        setIsLoading(false);
+      }
+    } catch (error) {
+      toast.error('Failed to load elections');
+      setIsLoading(false);
+    }
+  };
 
   const fetchVotes = async () => {
+    if (!selectedElection) return;
     try {
-      const { data } = await backendAPI.get('/vote/list'); // Hypothetical
+      const { data } = await backendAPI.get(`/api/admin/vote?electionId=${selectedElection}`); // Unified Route
       const list = Array.isArray(data) ? data : data.data || [];
       setVotes(list);
       
@@ -33,10 +52,14 @@ export default function VotesMonitorPage() {
   };
 
   useEffect(() => {
+    fetchInitialData();
+  }, []);
+
+  useEffect(() => {
     fetchVotes();
     const interval = setInterval(fetchVotes, 10000);
     return () => clearInterval(interval);
-  }, []);
+  }, [selectedElection]);
 
   const columns = [
     { 
@@ -85,13 +108,23 @@ export default function VotesMonitorPage() {
           title="Vote Stream Monitor" 
           subtitle="High-fidelity tracking of cryptographic ballots across the network"
         />
-        <div className="flex space-x-2">
-           <button 
+        <div className="flex space-x-2 items-center">
+            <select 
+              value={selectedElection}
+              onChange={(e) => setSelectedElection(e.target.value)}
+              className="px-4 py-3 bg-white border border-gray-100 rounded-2xl text-sm font-bold shadow-sm focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 outline-none transition-all"
+            >
+              <option value="">Select Election</option>
+              {elections.map((e) => (
+                <option key={e._id} value={e._id}>{e.title}</option>
+              ))}
+            </select>
+            <button 
              onClick={fetchVotes}
              className="p-3 bg-white border border-gray-100 text-gray-400 hover:text-amber-500 rounded-2xl transition-all shadow-sm"
-           >
+            >
              <RefreshCw className="w-5 h-5" />
-           </button>
+            </button>
         </div>
       </div>
 

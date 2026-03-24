@@ -5,9 +5,9 @@ export interface DigiDocument {
   id: string;
   name: string;
   type: 'Aadhaar' | 'Voter ID' | 'PAN' | 'Other';
-  fileUrl: string;
   uploadedAt: string;
   verified: boolean;
+  fileUrl?: string; // Add fileUrl
 }
 
 export interface User {
@@ -15,6 +15,9 @@ export interface User {
   name: string;
   aadhaarNumber: string;
   mobileNumber: string;
+  address: string;
+  constituencyId: string;
+  faceEmbedding: string;
   documents: DigiDocument[];
 }
 
@@ -22,11 +25,11 @@ interface DigiLockerState {
   user: User | null;
   isAuthenticated: boolean;
   isVerified: boolean;
-  login: (aadhaar: string, name?: string) => void;
+  login: (user: User) => void;
   logout: () => void;
+  setVerified: (status: boolean) => void;
   addDocument: (doc: DigiDocument) => void;
   removeDocument: (id: string) => void;
-  setVerified: (status: boolean) => void;
 }
 
 export const useDigiLockerStore = create<DigiLockerState>()(
@@ -35,34 +38,15 @@ export const useDigiLockerStore = create<DigiLockerState>()(
       user: null,
       isAuthenticated: false,
       isVerified: false,
-      login: (aadhaar: string, name: string = 'Ramanuj') => 
-        set({ 
-          user: { 
-            id: 'u-123', 
-            name: name, 
-            aadhaarNumber: aadhaar,
-            mobileNumber: '9123456780',
-            documents: [
-              { 
-                id: 'd-1', 
-                name: `${name} Aadhaar Card`, 
-                type: 'Aadhaar', 
-                fileUrl: '#', 
-                uploadedAt: new Date().toISOString(), 
-                verified: true 
-              }
-            ] 
-          }, 
-          isAuthenticated: true 
-        }),
+      login: (user: User) => set({ user, isAuthenticated: true }),
       logout: () => set({ user: null, isAuthenticated: false, isVerified: false }),
-      addDocument: (doc) => set((state) => ({
+      setVerified: (status) => set({ isVerified: status }),
+      addDocument: (doc: DigiDocument) => set((state) => ({
         user: state.user ? { ...state.user, documents: [...state.user.documents, doc] } : null
       })),
-      removeDocument: (id) => set((state) => ({
+      removeDocument: (id: string) => set((state) => ({
         user: state.user ? { ...state.user, documents: state.user.documents.filter(d => d.id !== id) } : null
       })),
-      setVerified: (status) => set({ isVerified: status }),
     }),
     { name: 'digilocker-app-storage' }
   )

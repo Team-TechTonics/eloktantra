@@ -17,7 +17,7 @@ function LoginContent() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
 
-  const fromVote = searchParams.get("from") === "vote"
+  const fromVote = searchParams?.get("from") === "vote"
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -54,19 +54,37 @@ function LoginContent() {
     }
   }
 
-  const handleVerify = () => {
+  const handleVerify = async () => {
     if (otp.some(v => v === "")) {
       setError("Please enter the full 6-digit OTP")
       return
     }
     setError("")
     setIsLoading(true)
-    setTimeout(() => {
-      login(inputValue)
-      setIsLoading(false)
-      // Redirect handled by useEffect
-    }, 2000)
+
+    try {
+      const response = await fetch('/api/digilocker/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ identifier: inputValue })
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        // Update store with REAL data from DB
+        login(data.user); 
+        setIsLoading(false);
+      } else {
+        setError(data.error || "Identity not found in National Database");
+        setIsLoading(false);
+      }
+    } catch (err) {
+      setError("Identity Service Unavailable. Please try again.");
+      setIsLoading(false);
+    }
   }
+
 
   return (
     <div className="flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">

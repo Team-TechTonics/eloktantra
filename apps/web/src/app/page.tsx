@@ -1,146 +1,184 @@
 import Link from 'next/link';
+import { 
+  Users, Globe, AlertCircle, 
+  ShieldCheck, BookOpen, Fingerprint, 
+  Zap, BarChart3, ChevronRight 
+} from 'lucide-react';
+
+const stats = [
+  { value: '1.4B+', label: 'Citizens', icon: '👥' },
+  { value: '543', label: 'Constituencies', icon: '🗺️' },
+  { value: '8,500+', label: 'Candidates', icon: '🏛️' },
+  { value: '100%', label: 'Transparency', icon: '🔍' },
+];
+
+const features = [
+  {
+    title: 'Candidate Audit',
+    description: 'De-anonymized background checks, judicial records, and verified asset disclosures for every listed candidate.',
+    href: '/candidates',
+    icon: <Users className="w-6 h-6" />,
+    color: 'from-blue-500/10 to-blue-600/5',
+    border: 'hover:border-blue-500/25',
+    iconColor: 'text-blue-400 bg-blue-500/10',
+  },
+  {
+    title: 'Polling Streams',
+    description: 'Hierarchical tracking of election cycles. Follow state and national results in a secure, immutable ledger.',
+    href: '/elections',
+    icon: <Globe className="w-6 h-6" />,
+    color: 'from-orange-500/10 to-orange-600/5',
+    border: 'hover:border-orange-500/25',
+    iconColor: 'text-orange-400 bg-orange-500/10',
+  },
+  {
+    title: 'Civic Grievances',
+    description: 'Scoped reporting of regional infrastructure and community issues directly linked to constituent representatives.',
+    href: '/issues',
+    icon: <AlertCircle className="w-6 h-6" />,
+    color: 'from-red-500/10 to-red-600/5',
+    border: 'hover:border-red-500/25',
+    iconColor: 'text-red-400 bg-red-500/10',
+  },
+  {
+    title: 'Digital Manifestos',
+    description: 'Immutably filed policy commitments and development roadmaps, accessible via candidate audit profiles.',
+    href: '/candidates',
+    icon: <BookOpen className="w-6 h-6" />,
+    color: 'from-emerald-500/10 to-emerald-600/5',
+    border: 'hover:border-emerald-500/25',
+    iconColor: 'text-emerald-400 bg-emerald-500/10',
+  },
+  {
+    title: 'Identity Ledger',
+    description: 'Biometric liveness checks and DigiLocker consensus ensure every vote is cast by a verified human citizen.',
+    href: '/dashboard',
+    icon: <Fingerprint className="w-6 h-6" />,
+    color: 'from-purple-500/10 to-purple-600/5',
+    border: 'hover:border-purple-500/25',
+    iconColor: 'text-purple-400 bg-purple-500/10',
+  },
+  {
+    title: 'The Secure Ballot',
+    description: 'AES-256 encrypted, blockchain-verified digital voting system designed for India\'s scale and diversity.',
+    href: '/vote',
+    icon: <ShieldCheck className="w-6 h-6" />,
+    color: 'from-primary/10 to-primary/5',
+    border: 'hover:border-primary/25',
+    iconColor: 'text-primary bg-primary/10',
+  },
+];
 
 export default function Home() {
-  const features = [
-    {
-      title: 'Transparent Candidates',
-      description: 'Deep dive into candidate backgrounds, criminal records, and financial disclosures.',
-      icon: (
-        <svg className="w-8 h-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-        </svg>
-      ),
-    },
-    {
-      title: 'Direct Civic Reporting',
-      description: 'Report civic issues directly to local representatives and track resolution progress.',
-      icon: (
-        <svg className="w-8 h-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-        </svg>
-      ),
-    },
-    {
-      title: 'Promise Tracking',
-      description: 'Hold leaders accountable by tracking manifestos against real-world progress.',
-      icon: (
-        <svg className="w-8 h-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-        </svg>
-      ),
-    },
-    {
-      title: 'AI Manifesto Comparison',
-      description: 'Use advanced AI to compare policy platforms and understand key differences.',
-      icon: (
-        <svg className="w-8 h-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-        </svg>
-      ),
-    },
-    {
-      title: 'Secure Voting',
-      description: 'Transparent and secure digital voting experiments powered by blockchain.',
-      icon: (
-        <svg className="w-8 h-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-        </svg>
-      ),
-    },
-  ];
-
   return (
-    <div className="flex flex-col min-h-[calc(100vh-64px)] overflow-x-hidden">
+    <div className="flex flex-col min-h-screen bg-[#020408] text-white overflow-x-hidden selection:bg-primary/30">
+
       {/* Hero Section */}
-      <section className="relative flex flex-col items-center justify-center pt-16 md:pt-24 pb-24 md:pb-32 px-4 overflow-hidden">
-        {/* Background Gradients */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-full -z-10 opacity-20 pointer-events-none">
-          <div className="absolute top-0 left-1/4 w-[300px] md:w-[500px] h-[300px] md:h-[500px] bg-primary rounded-full blur-[80px] md:blur-[120px]" />
-          <div className="absolute bottom-0 right-1/4 w-[300px] md:w-[500px] h-[300px] md:h-[500px] bg-accent rounded-full blur-[80px] md:blur-[120px]" />
-        </div>
+      <section className="relative pt-40 pb-32 px-6 overflow-hidden">
+        <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-primary/10 rounded-full blur-[120px] -mr-96 -mt-96 animate-pulse" />
+        <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-blue-500/5 rounded-full blur-[100px] -ml-64 -mb-64" />
 
-        <div className="text-center max-w-4xl animate-in fade-in slide-in-from-bottom-8 duration-1000 px-2">
-          <h1 className="text-5xl sm:text-7xl md:text-8xl font-black mb-6 md:mb-8 tracking-tighter orange-text-gradient">
-            eLoktantra
+        <div className="container mx-auto max-w-7xl relative z-10 text-center space-y-10">
+          <div className="inline-flex items-center px-4 py-2 rounded-full border border-primary/20 bg-primary/5 backdrop-blur-xl animate-in fade-in slide-in-from-top-4 duration-1000">
+            <Zap className="w-4 h-4 text-primary mr-2" />
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Next-Gen Democratic Protocol</span>
+          </div>
+
+          <h1 className="text-6xl md:text-8xl font-black uppercase tracking-tighter leading-[0.8] animate-in fade-in zoom-in-95 duration-1000">
+            E-LOK<br /><span className="text-primary italic">TANTRA</span>
           </h1>
-          <p className="text-lg sm:text-xl md:text-2xl mb-10 md:mb-12 text-gray-400 leading-relaxed font-medium">
-            Empowering Indian democracy through transparency, <br className="hidden sm:block" />
-            accountability, and active civic participation.
+
+          <p className="text-lg md:text-xl text-gray-400 font-medium max-w-3xl mx-auto leading-relaxed border-l-2 border-primary/20 pl-8 text-left italic">
+            "Empowering India&apos;s democracy through radical transparency, verifiable elections, and direct civic participation — powered by AI &amp; Blockchain."
           </p>
-          
-          <div className="flex flex-col sm:flex-row justify-center items-center gap-4 md:gap-6">
-            <Link 
-              href="/candidates" 
-              className="group relative w-full sm:w-auto px-8 md:px-10 py-4 md:py-5 bg-primary hover:bg-accent rounded-full font-bold text-lg md:text-xl transition-all shadow-2xl shadow-primary/30 hover:shadow-primary/50 overflow-hidden text-center"
-            >
-              <span className="relative z-10">Explore Platform</span>
-              <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-6 pt-6 animate-in fade-in slide-in-from-bottom-8 duration-1000">
+            <Link href="/elections" className="group px-10 py-5 bg-white text-black font-black text-xs uppercase tracking-widest rounded-full hover:bg-primary hover:text-white transition-all shadow-2xl flex items-center">
+                Initialize System <ChevronRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
             </Link>
-            <Link 
-              href="/dashboard" 
-              className="w-full sm:w-auto px-8 md:px-10 py-4 md:py-5 glass-card hover:bg-white/10 rounded-full font-bold text-lg md:text-xl transition-all border-white/10 hover:border-white/20 text-center"
-            >
-              Learn More
+            <Link href="/vote" className="px-10 py-5 bg-primary/10 text-primary border border-primary/20 font-black text-xs uppercase tracking-widest rounded-full hover:bg-primary/20 transition-all flex items-center">
+                <ShieldCheck className="w-4 h-4 mr-2" /> Secure Ballot
             </Link>
           </div>
         </div>
+      </section>
 
-        {/* Feature Cards Grid */}
-        <div id="features" className="mt-24 md:mt-40 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 max-w-7xl w-full px-4">
-          {features.map((feature, idx) => (
-            <div 
-              key={idx}
-              className="group p-6 md:p-8 glass-card hover:bg-secondary/80 transition-all duration-300 sm:hover:-translate-y-2 border-white/5 hover:border-primary/20"
-            >
-              <div className="mb-4 md:mb-6 p-3 w-fit rounded-2xl bg-primary/10 group-hover:bg-primary/20 transition-colors">
-                {feature.icon}
-              </div>
-              <h3 className="text-xl md:text-2xl font-bold mb-3 md:mb-4 group-hover:text-primary transition-colors">
-                {feature.title}
-              </h3>
-              <p className="text-sm md:text-base text-gray-400 leading-relaxed group-hover:text-gray-300 transition-colors">
-                {feature.description}
-              </p>
+      {/* Stats Board */}
+      <div className="border-y border-white/5 bg-white/2 backdrop-blur-3xl py-16">
+        <div className="container mx-auto px-6 max-w-7xl">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-12">
+                {stats.map((s, i) => (
+                    <div key={i} className="text-center group">
+                        <div className="text-5xl font-black text-white mb-2 group-hover:text-primary transition-colors">{s.value}</div>
+                        <div className="text-[10px] font-black text-gray-500 uppercase tracking-widest">{s.label}</div>
+                    </div>
+                ))}
             </div>
-          ))}
-          
-          {/* Dashboard Quick Link Card */}
-          <Link 
-            href="/dashboard"
-            className="group p-6 md:p-8 glass-card border-dashed border-white/20 hover:border-primary transition-all flex flex-col items-center justify-center text-center bg-transparent"
-          >
-            <div className="mb-4 md:mb-6 p-3 rounded-full bg-primary/10 group-hover:bg-primary transition-all duration-300">
-              <svg className="w-8 h-8 group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-              </svg>
+        </div>
+      </div>
+
+      {/* Core Features */}
+      <section className="py-32 px-6">
+        <div className="container mx-auto max-w-7xl">
+            <div className="mb-20 text-center">
+                <h2 className="text-4xl md:text-6xl font-black uppercase tracking-tighter mb-4">Infrastructure <span className="text-primary">Shield</span></h2>
+                <div className="w-20 h-1 bg-primary mx-auto rounded-full" />
             </div>
-            <h3 className="text-xl md:text-2xl font-bold mb-2">Ready to Start?</h3>
-            <p className="text-sm text-gray-400">Jump straight into your constituency dashboard</p>
-          </Link>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {features.map((f, i) => (
+                    <Link key={i} href={f.href} className={`group p-10 bg-[#0d1117] border border-white/5 rounded-[3rem] transition-all duration-500 hover:border-primary/30 hover:bg-white/2 hover:-translate-y-2`}>
+                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-10 ${f.iconColor} group-hover:scale-110 transition-transform`}>
+                            {f.icon}
+                        </div>
+                        <h3 className="text-2xl font-black uppercase tracking-tighter mb-4 group-hover:text-primary transition-colors">{f.title}</h3>
+                        <p className="text-gray-400 font-medium leading-relaxed mb-8">{f.description}</p>
+                        <div className="flex items-center text-[10px] font-black uppercase tracking-[0.2em] text-gray-600 group-hover:text-white transition-colors">
+                            Explore <ChevronRight className="w-4 h-4 ml-1" />
+                        </div>
+                    </Link>
+                ))}
+            </div>
         </div>
       </section>
 
-      {/* Trust Section / Stats */}
-      <section className="py-16 md:py-24 border-t border-white/5 bg-secondary/30">
-        <div className="container mx-auto px-4 grid grid-cols-2 lg:grid-cols-4 gap-8 text-center">
-          <div>
-            <div className="text-3xl md:text-4xl font-black text-primary mb-1 md:mb-2">1.4B</div>
-            <div className="text-[10px] md:text-xs text-gray-500 font-medium uppercase tracking-widest">Citizens</div>
-          </div>
-          <div>
-            <div className="text-3xl md:text-4xl font-black text-primary mb-1 md:mb-2">543</div>
-            <div className="text-[10px] md:text-xs text-gray-500 font-medium uppercase tracking-widest">Constituencies</div>
-          </div>
-          <div>
-            <div className="text-3xl md:text-4xl font-black text-primary mb-1 md:mb-2">8.5k+</div>
-            <div className="text-[10px] md:text-xs text-gray-500 font-medium uppercase tracking-widest">Candidates</div>
-          </div>
-          <div>
-            <div className="text-3xl md:text-4xl font-black text-primary mb-1 md:mb-2">100%</div>
-            <div className="text-[10px] md:text-xs text-gray-500 font-medium uppercase tracking-widest">Transparency</div>
-          </div>
+      {/* Final Action */}
+      <section className="pb-40 px-6">
+        <div className="container mx-auto max-w-4xl">
+            <div className="bg-primary/5 border border-primary/20 rounded-[4rem] p-16 md:p-24 text-center relative overflow-hidden group">
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent opacity-50" />
+                <div className="relative z-10 space-y-8">
+                    <h2 className="text-4xl md:text-7xl font-black uppercase tracking-tighter leading-none">Your <span className="text-primary">Vote</span>,<br /> Your Legacy.</h2>
+                    <p className="text-gray-400 font-medium text-lg max-w-xl mx-auto">Digitally signed. Immutably recorded. Powerfully verified. Join the movement for a 100% transparent democracy.</p>
+                    <div className="pt-8">
+                        <Link href="/vote" className="inline-flex items-center px-12 py-6 bg-primary text-white font-black text-[10px] uppercase tracking-widest rounded-full hover:bg-white hover:text-black transition-all shadow-[0_20px_50px_rgba(255,107,0,0.3)] active:scale-95 group-hover:scale-105">
+                            Launch Secure Ballot Gateway
+                        </Link>
+                    </div>
+                </div>
+            </div>
         </div>
       </section>
+
+      {/* Footer */}
+      <footer className="py-20 border-t border-white/5 bg-[#020408]">
+        <div className="container mx-auto px-6 max-w-7xl">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-12">
+                <div className="text-center md:text-left space-y-4">
+                    <h2 className="text-3xl font-black uppercase tracking-tighter leading-none">e-Lok<span className="text-primary">Tantra</span></h2>
+                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Digital Democratic Infrastructure · India 2024</p>
+                </div>
+                <div className="flex flex-wrap justify-center gap-12">
+                    {['Candidates', 'Elections', 'Issues', 'Dashboard'].map(l => (
+                        <Link key={l} href={`/${l.toLowerCase()}`} className="text-xs font-black uppercase tracking-widest text-gray-400 hover:text-white transition-colors">
+                            {l}
+                        </Link>
+                    ))}
+                </div>
+            </div>
+        </div>
+      </footer>
+
     </div>
   );
 }

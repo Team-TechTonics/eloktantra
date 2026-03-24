@@ -14,7 +14,7 @@ export default function AuditLogsPage() {
 
   const fetchLogs = async () => {
     try {
-      const { data } = await backendAPI.get('/audit/all'); // Hypothetical
+      const { data } = await backendAPI.get('/api/admin/audit'); // Unified route
       setLogs(Array.isArray(data) ? data : data.data || []);
     } catch (error) {
       console.error('Failed to load system audits');

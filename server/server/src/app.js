@@ -11,6 +11,8 @@ const authController = require('./controllers/authController');
 const voteController = require('./controllers/voteController');
 const candidateRoutes = require('./routes/candidateRoutes');
 const electionRoutes = require('./routes/electionRoutes');
+const constituencyRoutes = require('./routes/constituencyRoutes');
+const partyRoutes = require('./routes/partyRoutes');
 
 const app = express();
 app.use(express.json());
@@ -64,6 +66,11 @@ app.use('/voting/candidates', candidateRoutes); // Some frontend calls might use
 app.use('/elections', electionRoutes); // Standard
 app.use('/voting/elections', electionRoutes); // Frontend detail fetch prefix
 app.use('/election', electionRoutes); // Frontend active fetch prefix
+app.use('/api/admin/election', electionRoutes); // Admin portal alias
+app.use('/api/admin/constituency', constituencyRoutes); 
+app.use('/api/candidates', candidateRoutes); // Common alias
+app.use('/api/admin/candidate', candidateRoutes); // Admin portal alias
+app.use('/api/admin/party', partyRoutes);
 
 // Error Handling Middleware
 app.use((err, req, res, next) => {

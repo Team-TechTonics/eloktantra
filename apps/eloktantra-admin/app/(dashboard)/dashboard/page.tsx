@@ -5,10 +5,14 @@ import StatsCard from '@/components/dashboard/StatsCard';
 import PageHeader from '@/components/layout/PageHeader';
 import { Users, Flag, Map, Vote, Activity, Hash, Clock } from 'lucide-react';
 import axios from 'axios';
-import backendAPI from '@/lib/api';
+import contentAPI from '@/lib/api'; // This is PORT 3000
 import RecentActivity from '@/components/dashboard/RecentActivity';
 import VoteChart from '@/components/dashboard/VoteChart';
 
+/**
+ * DASHBOARD : REAL-TIME MONITORING FROM PORT 3000 (CONTENT SOURCE OF TRUTH)
+ * ENFORCES CORS & HIERARCHY
+ */
 export default function DashboardPage() {
   const [stats, setStats] = useState({
     candidates: 0,
@@ -23,38 +27,37 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const [cRes, pRes, coRes] = await Promise.all([
-          axios.get('/api/candidates'),
-          axios.get('/api/parties'),
-          axios.get('/api/constituencies'),
+        // Explicitly calling the REMOTE content source (Port 3000) 
+        // Handles hierarchical data retrieval
+        const [cRes, pRes, coRes, eRes] = await Promise.all([
+          contentAPI.get('/api/candidates'),
+          contentAPI.get('/api/admin/party'), // Unified party management
+          contentAPI.get('/api/admin/constituency'),
+          contentAPI.get('/api/election/active'),
         ]);
 
-        let activeElection: any = { title: 'None', id: null };
-        try {
-          // Pointing to user's documented NestJS endpoint
-          const eRes = await backendAPI.get('/election/active');
-          activeElection = eRes.data || { title: 'None', id: null };
-        } catch (error) {
-          console.warn('Dashboard: Remote active election not found at /election/active');
-        }
+        const activeElection = eRes.data || { title: 'None Found', id: null };
         
         let voteCount = 0;
         if (activeElection._id || activeElection.id) {
-          const vRes = await backendAPI.get(`/vote/count/${activeElection._id || activeElection.id}`).catch(() => ({ data: 0 }));
-          // Handle object response { total, committed, pending } or simple number
-          voteCount = vRes.data?.total !== undefined ? vRes.data.total : (typeof vRes.data === 'number' ? vRes.data : 0);
+           try {
+               const vRes = await contentAPI.get(`/api/admin/results?electionId=${activeElection._id || activeElection.id}`);
+               voteCount = vRes.data?.totalVotesCast || 0;
+           } catch (vErr) {
+               console.warn("Unable to fetch real-time vote count");
+           }
         }
 
         setStats({
-          candidates: cRes.data.data?.length || 0,
+          candidates: cRes.data.data?.length || cRes.data.candidates?.length || 0,
           parties: pRes.data.data?.length || 0,
-          constituencies: coRes.data.data?.length || 0,
+          constituencies: coRes.data.data?.length || coRes.data.constituencies?.length || 0,
           activeElection: activeElection.title || 'None',
           totalVotes: voteCount,
           pendingSync: 0,
         });
       } catch (error) {
-        console.error('Failed to load dashboard data');
+        console.error('Failed to load dashboard data from Port 3000. Check CORS and Network.');
       } finally {
         setIsLoading(false);
       }
@@ -68,7 +71,7 @@ export default function DashboardPage() {
       <div className="flex justify-between items-end">
         <PageHeader 
           title="System Overview" 
-          subtitle="Real-time insights into the eLoktantra democratic network"
+          subtitle="Real-time insights across the democratic network (Port 3000 Source)"
         />
         <div className="flex items-center space-x-2 bg-white border border-gray-100 px-4 py-2 rounded-2xl shadow-sm">
           <Clock className="w-4 h-4 text-amber-500" />

@@ -36,6 +36,16 @@ const DEMO_ELECTION: ElectionDetail = {
   ]
 };
 
+export const fetchConstituencies = async (): Promise<any[]> => {
+  try {
+    const { data } = await apiClient.get('/api/admin/constituency');
+    return data.constituencies || data.data || [];
+  } catch (error) {
+    console.warn('Failed to fetch constituencies from backend:', error);
+    return [];
+  }
+};
+
 export const fetchElections = async (): Promise<Election[]> => {
   try {
     const { data } = await apiClient.get('/elections');

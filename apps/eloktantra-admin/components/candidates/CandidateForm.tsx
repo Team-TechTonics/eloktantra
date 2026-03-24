@@ -9,7 +9,7 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 import { Plus, Trash2, Save, X, ChevronRight, User, Shield, Globe, Award } from 'lucide-react';
 import { Party, Constituency, Election } from '@/types';
-import backendAPI from '@/lib/api';
+import { contentAPI as backendAPI, adminGetParties, adminGetConstituencies, adminCreateCandidate, adminGetActiveElection } from '@/lib/api';
 
 const candidateSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -25,16 +25,12 @@ const candidateSchema = z.object({
   criminal_cases: z.number().default(0),
   criminal_details: z.string().optional(),
   manifesto_summary: z.string().optional(),
-  promises: z.array(z.object({
-    title: z.string().min(1),
-    status: z.enum(['Pending', 'InProgress', 'Completed'])
-  })).default([]),
   social_links: z.object({
     twitter: z.string().optional(),
     facebook: z.string().optional(),
     website: z.string().optional()
   }).optional(),
-  election_id: z.string().optional(),
+  electionId: z.string().min(1, 'Election link required'),
 });
 
 type CandidateFormValues = z.infer<typeof candidateSchema>;
@@ -50,32 +46,24 @@ export default function CandidateForm({ initialData, id }: { initialData?: any, 
     resolver: zodResolver(candidateSchema),
     defaultValues: initialData || {
       name: '',
-      party: '',
       partyId: '',
-      constituency: '',
       constituencyId: '',
       gender: 'Male',
       age: 25,
-      promises: [],
       criminal_cases: 0,
     }
-  });
-
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: "promises"
   });
 
   useEffect(() => {
     const loadData = async () => {
       try {
         const [pRes, cRes, eRes] = await Promise.all([
-          axios.get('/api/parties'),
-          axios.get('/api/constituencies'),
-          backendAPI.get('/election/active').catch(() => ({ data: { data: [] } }))
+          adminGetParties(),
+          adminGetConstituencies(),
+          adminGetActiveElection().catch(() => ({ data: { data: [] } }))
         ]);
-        setParties(pRes.data.data);
-        setConstituencies(cRes.data.data);
+        setParties(pRes.data.data || []);
+        setConstituencies(cRes.data.data || []);
         setActiveElections(Array.isArray(eRes.data) ? eRes.data : eRes.data.data || []);
       } catch (error) {
         console.error('Failed to load form dependencies', error);
@@ -86,13 +74,11 @@ export default function CandidateForm({ initialData, id }: { initialData?: any, 
 
   const onSubmit = async (values: CandidateFormValues) => {
     try {
-      if (id) {
-        await axios.put(`/api/candidates/${id}`, values);
-        toast.success('Candidate updated successfully');
-      } else {
-        await axios.post('/api/candidates', values);
-        toast.success('Candidate nominated successfully');
-      }
+      await adminCreateCandidate({
+         ...values,
+         id: id // Pass current ID if editing
+      });
+      toast.success(id ? 'Candidate updated successfully' : 'Candidate nominated successfully');
       router.push('/candidates');
     } catch (error: any) {
       toast.error(error.response?.data?.error || 'Failed to save candidate');
@@ -114,9 +100,9 @@ export default function CandidateForm({ initialData, id }: { initialData?: any, 
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={`flex items-center px-8 py-5 text-sm font-bold border-b-2 transition-all whitespace-nowrap
-              ${activeTab === tab.id ? 'border-amber-500 text-amber-500 bg-amber-50/30' : 'border-transparent text-gray-400 hover:text-gray-600 hover:bg-gray-50'}`}
+              ${activeTab === tab.id ? 'border-orange-500 text-orange-500 bg-amber-50/30' : 'border-transparent text-gray-400 hover:text-gray-600 hover:bg-gray-50'}`}
           >
-            <tab.icon className={`w-4 h-4 mr-2 ${activeTab === tab.id ? 'text-amber-500' : 'text-gray-300'}`} />
+            <tab.icon className={`w-4 h-4 mr-2 ${activeTab === tab.id ? 'text-orange-500' : 'text-gray-300'}`} />
             {tab.label}
           </button>
         ))}
@@ -129,7 +115,7 @@ export default function CandidateForm({ initialData, id }: { initialData?: any, 
               <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Full Name</label>
               <input 
                 {...register('name')}
-                className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none transition-all font-medium"
+                className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all font-medium"
                 placeholder="e.g. Narendra Modi"
               />
               {errors.name && <p className="text-red-500 text-[10px] font-bold mt-1 px-1 uppercase">{errors.name.message}</p>}
@@ -145,7 +131,7 @@ export default function CandidateForm({ initialData, id }: { initialData?: any, 
                     setValue('party', party.name);
                   }
                 }}
-                className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none transition-all font-medium appearance-none cursor-pointer"
+                className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all font-medium appearance-none cursor-pointer"
               >
                 <option value="">Select Party</option>
                 {parties.map(p => <option key={p._id} value={p._id} selected={watch('partyId') === p._id}>{p.name} ({p.abbreviation})</option>)}
@@ -162,7 +148,7 @@ export default function CandidateForm({ initialData, id }: { initialData?: any, 
                     setValue('constituency', consti.name);
                   }
                 }}
-                className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none transition-all font-medium appearance-none cursor-pointer"
+                className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all font-medium appearance-none cursor-pointer"
               >
                 <option value="">Select Constituency</option>
                 {constituencies.map(c => <option key={c._id} value={c._id} selected={watch('constituencyId') === c._id}>{c.name} ({c.state})</option>)}
@@ -175,14 +161,14 @@ export default function CandidateForm({ initialData, id }: { initialData?: any, 
                 <input 
                   type="number"
                   {...register('age', { valueAsNumber: true })}
-                  className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none transition-all font-medium"
+                  className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all font-medium"
                 />
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Gender</label>
                 <select 
                   {...register('gender')}
-                  className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none transition-all font-medium appearance-none cursor-pointer"
+                  className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all font-medium appearance-none cursor-pointer"
                 >
                   <option value="Male">Male</option>
                   <option value="Female">Female</option>
@@ -195,7 +181,7 @@ export default function CandidateForm({ initialData, id }: { initialData?: any, 
               <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Education Qualification</label>
               <input 
                 {...register('education')}
-                className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none transition-all font-medium"
+                className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all font-medium"
                 placeholder="e.g. M.A. in Political Science"
               />
             </div>
@@ -209,7 +195,7 @@ export default function CandidateForm({ initialData, id }: { initialData?: any, 
                 <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Declared Net Worth</label>
                 <input 
                   {...register('net_worth')}
-                  className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none transition-all font-medium"
+                  className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all font-medium"
                   placeholder="e.g. ₹1.5 Cr"
                 />
               </div>
@@ -218,7 +204,7 @@ export default function CandidateForm({ initialData, id }: { initialData?: any, 
                 <input 
                   type="number"
                   {...register('criminal_cases', { valueAsNumber: true })}
-                  className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none transition-all font-medium"
+                  className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all font-medium"
                 />
               </div>
             </div>
@@ -227,7 +213,7 @@ export default function CandidateForm({ initialData, id }: { initialData?: any, 
               <textarea 
                 {...register('criminal_details')}
                 rows={4}
-                className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none transition-all font-medium resize-none"
+                className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all font-medium resize-none"
                 placeholder="Describe pending criminal cases according to EC guidelines..."
               />
             </div>
@@ -239,8 +225,8 @@ export default function CandidateForm({ initialData, id }: { initialData?: any, 
             <div className="space-y-2">
               <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Active Election Link</label>
               <select 
-                {...register('election_id')}
-                className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none transition-all font-medium appearance-none cursor-pointer"
+                {...register('electionId')}
+                className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all font-medium appearance-none cursor-pointer"
               >
                 <option value="">Select active election...</option>
                 {activeElections.map(e => <option key={e.id} value={e.id}>{e.title}</option>)}
@@ -253,49 +239,9 @@ export default function CandidateForm({ initialData, id }: { initialData?: any, 
               <textarea 
                 {...register('manifesto_summary')}
                 rows={5}
-                className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none transition-all font-medium resize-none"
+                className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all font-medium resize-none"
                 placeholder="Briefly describe the candidate's vision and core promises..."
               />
-            </div>
-
-            <div className="space-y-4">
-              <div className="flex justify-between items-center px-1">
-                <label className="text-xs font-black text-gray-400 uppercase tracking-widest">Election Promises</label>
-                <button 
-                  type="button" 
-                  onClick={() => append({ title: '', status: 'Pending' })}
-                  className="text-[10px] font-black uppercase text-amber-500 hover:text-amber-600 flex items-center bg-amber-50 px-3 py-1.5 rounded-lg transition-colors"
-                >
-                  <Plus className="w-3 h-3 mr-1" /> Add Promise
-                </button>
-              </div>
-              
-              <div className="space-y-3">
-                {fields.map((field, index) => (
-                  <div key={field.id} className="flex items-center space-x-3 animate-in slide-in-from-left-2 duration-200">
-                    <input 
-                      {...register(`promises.${index}.title` as const)}
-                      placeholder="e.g. 24/7 Clean Water supply"
-                      className="flex-1 px-5 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none transition-all font-medium text-sm"
-                    />
-                    <select 
-                      {...register(`promises.${index}.status` as const)}
-                      className="w-32 px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl outline-none font-bold text-[10px] uppercase tracking-widest"
-                    >
-                      <option value="Pending">Pending</option>
-                      <option value="InProgress">In Progress</option>
-                      <option value="Completed">Completed</option>
-                    </select>
-                    <button 
-                      type="button" 
-                      onClick={() => remove(index)}
-                      className="p-3 text-red-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                ))}
-              </div>
             </div>
           </div>
         )}
@@ -306,7 +252,7 @@ export default function CandidateForm({ initialData, id }: { initialData?: any, 
               <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Profile Photo URL</label>
               <input 
                 {...register('photo_url')}
-                className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none transition-all font-medium"
+                className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all font-medium"
                 placeholder="https://example.com/photo.jpg"
               />
             </div>
@@ -314,7 +260,7 @@ export default function CandidateForm({ initialData, id }: { initialData?: any, 
               <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Twitter (X) Profile</label>
               <input 
                 {...register('social_links.twitter')}
-                className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none transition-all font-medium"
+                className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all font-medium"
                 placeholder="@username"
               />
             </div>
@@ -322,7 +268,7 @@ export default function CandidateForm({ initialData, id }: { initialData?: any, 
               <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Facebook Page</label>
               <input 
                 {...register('social_links.facebook')}
-                className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none transition-all font-medium"
+                className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all font-medium"
                 placeholder="https://facebook.com/..."
               />
             </div>
@@ -354,7 +300,7 @@ export default function CandidateForm({ initialData, id }: { initialData?: any, 
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="px-10 py-3.5 bg-amber-500 text-white text-sm font-black rounded-2xl hover:bg-amber-600 transition-all flex items-center active:scale-95 shadow-lg shadow-amber-500/20 uppercase tracking-widest"
+                className="px-10 py-3.5 bg-orange-500 text-white text-sm font-black rounded-2xl hover:bg-amber-600 transition-all flex items-center active:scale-95 shadow-lg shadow-orange-500/20 uppercase tracking-widest"
               >
                 <Save className="w-4 h-4 mr-2" /> {isSubmitting ? 'Saving...' : 'Finalize Nomination'}
               </button>

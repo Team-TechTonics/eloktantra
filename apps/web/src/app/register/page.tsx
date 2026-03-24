@@ -1,10 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { register } from '@/lib/api/auth';
+import { fetchConstituencies } from '@/lib/api/voting';
 import { UserRole } from '@eloktantra/types';
 
 export default function RegisterPage() {
@@ -18,6 +19,22 @@ export default function RegisterPage() {
     confirmPassword: '',
     constituency: '',
   });
+  const [constituencies, setConstituencies] = useState<string[]>([]);
+
+  useEffect(() => {
+    const loadData = async () => {
+      const data = await fetchConstituencies();
+      if (data && data.length > 0) {
+        setConstituencies(data.map((c: any) => c.name || c));
+      } else {
+        setConstituencies([
+          'South Delhi', 'North Delhi', 'East Delhi', 'West Delhi', 'Central Delhi',
+          'Chandni Chowk', 'North East Delhi', 'North West Delhi'
+        ]);
+      }
+    };
+    loadData();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,10 +73,6 @@ export default function RegisterPage() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const constituencies = [
-    'South Delhi', 'North Delhi', 'East Delhi', 'West Delhi', 'Central Delhi',
-    'Chandni Chowk', 'North East Delhi', 'North West Delhi'
-  ];
 
   return (
     <div className="flex items-center justify-center min-h-[calc(100vh-64px)] py-12 px-4">

@@ -1,29 +1,14 @@
 export interface Candidate {
-  _id: string;
+  id: string;
+  _id?: string;
   name: string;
   party: string;
-  partyId: string;
-  constituency: string;
   constituencyId: string;
-  photo_url: string;
-  age: number;
-  gender: 'Male' | 'Female' | 'Other';
-  education: string;
-  net_worth: string;
-  criminal_cases: number;
-  criminal_details?: string;
-  manifesto_summary?: string;
-  promises: { title: string; status: 'Pending' | 'InProgress' | 'Completed' }[];
-  previous_terms: number;
-  social_links: {
-    twitter?: string;
-    facebook?: string;
-    website?: string;
-  };
-  election_id?: string;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
+  electionId: string;
+  assets?: string;
+  criminalCases: number;
+  photo_url?: string;
+  is_active?: boolean;
 }
 
 export interface Party {
@@ -32,78 +17,90 @@ export interface Party {
   abbreviation: string;
   logo_url: string;
   color: string;
-  ideology?: string;
-  founded_year?: number;
-  headquarters?: string;
-  president?: string;
-  website?: string;
   is_active: boolean;
-  created_at: string;
+  ideology: string;
+  founded_year: number;
 }
+
 
 export interface Constituency {
   _id: string;
+  id?: string;
   name: string;
+  electionId: string;
   state: string;
-  constituency_number: number;
-  type: 'General' | 'SC' | 'ST';
-  total_voters: number;
-  district?: string;
-  description?: string;
-  is_active: boolean;
-  created_at: string;
 }
 
 export interface Election {
   id: string;
   _id?: string;
   title: string;
-  status: 'ACTIVE' | 'INACTIVE' | 'ENDED';
-  start_date: string;
-  end_date: string;
-  candidates_count: number;
-  contract_address?: string;
-  total_votes?: number;
-  description?: string;
-  constituency?: string;
+  type: 'General' | 'State';
+  startDate: string;
+  endDate: string;
+  isActive: boolean;
+  constituency?: string; // fallback for legacy
+}
+
+export interface Issue {
+  _id: string;
+  id?: string;
+  title: string;
+  description: string;
+  constituencyId: string;
+  electionId: string;
+}
+
+export interface Manifesto {
+  _id: string;
+  id?: string;
+  candidateId: string;
+  electionId: string;
+  constituencyId: string;
+  title: string;
+  description: string;
 }
 
 export interface Voter {
   _id: string;
-  voter_id_hash: string;
-  booth_id: string;
-  has_voted: boolean;
-  election_id: string;
-  registered_at: string;
+  name: string;
+  phone: string;
+  voterId: string;
+  electionId: string;
+  constituencyId: string;
+  solToken?: string;
+  isActive: boolean;
+  createdAt?: string;
 }
 
 export interface Vote {
   id: string;
-  vote_hash: string;
-  election_id: string;
-  booth_id: string;
-  status: 'PENDING' | 'COMMITTED' | 'FAILED';
-  tx_hash?: string;
-  submitted_at: string;
+  _id?: string;
+  userId: string;
+  candidateId: string;
+  electionId: string;
+  constituencyId: string;
+  blockchainHash: string;
+  createdAt: string;
 }
 
 export interface AuditLog {
-  id: string;
-  event_type: 'VOTE_COMMITTED' | 'SIGNATURE_FAILED' | 'DUPLICATE_ATTEMPT' | 'BOOTH_LOGIN';
-  voter_id_hash?: string;
+  _id: string;
+  id?: string;
+  event_type: string;
+  detail: string;
   booth_id: string;
   ip_hash: string;
-  detail: string;
   timestamp: string;
 }
 
 export interface Officer {
   _id?: string;
-  id: string;
-  username: string;
+  id?: string;
   name: string;
+  username: string;
   booth_id: string;
-  last_login?: string;
+  device_id: string;
+  status: 'Online' | 'Offline';
   is_active: boolean;
-  device_id?: string;
 }

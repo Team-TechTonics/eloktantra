@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { 
   LayoutDashboard, Users, Flag, Map, 
   Vote, UserCheck, Activity, Shield, 
-  FileText, LogOut 
+  FileText, LogOut, AlertOctagon, BookOpen 
 } from 'lucide-react';
 import { signOut, useSession } from 'next-auth/react';
 
@@ -15,6 +15,8 @@ const navItems = [
   { label: 'Candidates', icon: Users, href: '/candidates' },
   { label: 'Parties', icon: Flag, href: '/parties' },
   { label: 'Constituencies', icon: Map, href: '/constituencies' },
+  { label: 'Issues', icon: AlertOctagon, href: '/issues' },
+  { label: 'Manifestos', icon: BookOpen, href: '/manifestos' },
   { label: 'VOTING', type: 'header' },
   { label: 'Elections', icon: Vote, href: '/elections' },
   { label: 'Voters', icon: UserCheck, href: '/voters' },
@@ -24,6 +26,7 @@ const navItems = [
   { label: 'Audit Logs', icon: FileText, href: '/audit' },
 ];
 
+
 export default function Sidebar() {
   const pathname = usePathname();
   const { data: session } = useSession();
@@ -31,7 +34,7 @@ export default function Sidebar() {
   return (
     <aside className="fixed left-0 top-0 h-screen w-64 bg-gray-900 text-gray-400 flex flex-col z-50">
       <div className="p-6">
-        <h1 className="text-2xl font-black text-amber-500 tracking-tighter uppercase">eLoktantra</h1>
+        <h1 className="text-2xl font-black text-orange-500 tracking-tighter uppercase">eLoktantra</h1>
         <p className="text-[10px] font-bold text-gray-500 tracking-widest uppercase mt-1">Admin Control V2.0</p>
       </div>
 
@@ -54,10 +57,10 @@ export default function Sidebar() {
               href={item.href!}
               className={`
                 group flex items-center px-3 py-2.5 text-sm font-medium rounded-xl transition-all
-                ${isActive ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20' : 'hover:bg-white/5 hover:text-white border border-transparent'}
+                ${isActive ? 'bg-orange-500/10 text-orange-500 border border-orange-500/20' : 'hover:bg-white/5 hover:text-white border border-transparent'}
               `}
             >
-              <Icon className={`w-5 h-5 mr-3 transition-colors ${isActive ? 'text-amber-500' : 'text-gray-500 group-hover:text-white'}`} />
+              <Icon className={`w-5 h-5 mr-3 transition-colors ${isActive ? 'text-orange-500' : 'text-gray-500 group-hover:text-white'}`} />
               {item.label}
             </Link>
           );

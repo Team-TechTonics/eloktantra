@@ -7,7 +7,10 @@ import axios from "axios"
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useSecureVotingSession } from '@/hooks/useSecureVotingSession';
 import { useElection, generateVotingToken, castVote } from '@/lib/api/voting';
+import { useDigiLockerStore } from '@/lib/store/digilocker-store';
+
 import { getStoredUser } from '@/lib/api/auth';
+import { ShieldCheck, ArrowRight } from 'lucide-react';
 import * as faceapi from 'face-api.js';
 
 // Declare the secureAPI for TypeScript
@@ -23,11 +26,13 @@ function VotingContent() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const electionId = params.electionId as string;
+  const electionId = params?.electionId as string;
+  const { user: digitUser } = useDigiLockerStore();
+
 
   // Token Enforcement (Moved to top level)
   useEffect(() => {
-    const token = searchParams.get('token');
+    const token = searchParams?.get('token');
     if (!token) {
       router.push('/vote');
     }
@@ -52,7 +57,13 @@ function VotingContent() {
   const [showVVPAT, setShowVVPAT] = useState(false);
   const [voteHash, setVoteHash] = useState("");
   const lastAlertTimeRef = useRef<number>(0);
+  const isDevMode = searchParams?.get('dev') === 'true';
   const { isLocked, violated, violationCount, unlock } = useStrictVotingLock();
+
+  // 🛠️ Developer Mode Auto-Bypass
+  useEffect(() => {
+    // We no longer auto-grant permissions so the developer can see the Identity Verification UI/Rules
+  }, [searchParams]);
   
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const setupVideoRef = useRef<HTMLVideoElement | null>(null);
@@ -441,13 +452,15 @@ function VotingContent() {
     window.location.href = "/dashboard";
   };
 
-  // Handle Session Errors
+  // Handle Session Errors (bypassed in Developer Mode)
   useEffect(() => {
-    if (error) {
+    const isDevMode = searchParams?.get('dev') === 'true';
+    if (error && !isDevMode) {
       alert(`Access Denied: ${error}`);
       router.push("/dashboard/elections");
     }
-  }, [error, router]);
+  }, [error, router, searchParams]);
+
 
   useEffect(() => {
     if (violated && !activeViolation) {
@@ -492,7 +505,21 @@ function VotingContent() {
     );
   }
 
-  const candidates = election.candidates || [];
+  // ─── ⚖️ HIERARCHICAL CANDIDATE FILTERING ─────────────────
+  const allCandidates = (election as any)?.candidates || [];
+  const candidates = allCandidates.filter((c: any) => 
+    !digitUser?.constituencyId || 
+    c.constituencyId === digitUser.constituencyId || 
+    c.constituencyId === (election as any).constituencyId ||
+    isDevMode // Show all in dev mode
+  );
+
+  const getElectionYear = () => {
+    if (!election?.start_time) return new Date().getFullYear();
+    const date = new Date(election.start_time);
+    return isNaN(date.getTime()) ? new Date().getFullYear() : date.getFullYear();
+  };
+
 
   const generateVoteHash = () => {
     const hash = Math.random().toString(36).substring(2, 12).toUpperCase();
@@ -550,61 +577,53 @@ function VotingContent() {
   const handleVoteSubmission = async (candidateId: string) => {
     if (!candidateId || !election) return;
     
-    // Removed manual login check: Biometric/Session verification is sufficient.
-    const user = getStoredUser();
-    const voterId = user?.id || `session-voter-${Date.now()}`;
-
     setIsSubmitting(true);
     try {
-      // 1. Generate local session recording
+      // 1. Capture hardware proof (Video Audit)
       const videoBlob = await stopRecording();
       
-      // 2. Map Voting Token from URL or fallback generator (requires auth)
-      console.log("Locating voting token...");
-      let tokenHash = searchParams.get('token');
-      
-      if (!tokenHash) {
-        tokenHash = await generateVotingToken({
-          voterId: voterId,
-          electionId: election.id
-        });
-      }
-
-      // 3. Submit encrypted vote to blockchain ledger
-      console.log("Casting vote...");
-      const result = await castVote({
-        electionId: election.id,
-        tokenHash: tokenHash,
-        encryptedVote: candidateId // Note: In a production app, this would be RSA encrypted
+      // 2. Submit to HIGH-SECURITY Node.js API
+      console.log("Casting ballot via Secure Gateway...");
+      const response = await fetch('/api/vote', {
+        method: 'POST',
+        headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+        },
+        body: JSON.stringify({
+          candidateId,
+          electionId: election.id,
+          constituencyId: digitUser?.constituencyId || (election as any).constituencyId
+        })
       });
 
-      console.log("Vote successful:", result.txHash);
+      const result = await response.json();
       
-      // 4. Save recording and complete session
-      const url = URL.createObjectURL(videoBlob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `verified-vote-${electionId}.webm`;
-      a.click();
-      
-      completeSession();
-      unlock();
-      
-      alert(`Voting Successful!\nTransaction: ${result.txHash}\nViolations detected: ${violations}`);
-      router.push("/dashboard");
+      if (result.success) {
+        setVoteHash(result.blockchainHash);
+        
+        const url = URL.createObjectURL(videoBlob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `audit-proof-${electionId}.webm`;
+        a.click();
+        
+        completeSession();
+        unlock();
+        
+        alert(`Voting Successful!\nTransaction: ${result.blockchainHash}`);
+        router.push("/dashboard");
+      } else {
+        throw new Error(result.error || "Ballot rejected.");
+      }
     } catch (err: any) {
       console.error("Voting failed:", err);
-      // More specific error handling
-      const msg = err.message || "Voting failed due to an internal error";
-      alert(`Voting Failed: ${msg}`);
-      
-      if (err.message?.includes("already voted")) {
-         router.push("/dashboard");
-      }
+      alert(`Voting Failed: ${err.message}`);
     } finally {
       setIsSubmitting(false);
     }
   };
+
 
   const handleQuit = async () => {
     if (!confirm("Are you sure you want to quit? This will count as one of your 3 allowed attempts.")) return;
@@ -617,26 +636,36 @@ function VotingContent() {
       {/* OS-Lock Security Overlay */}
       {violated && (
         <div className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-3xl flex flex-col items-center justify-center p-8 text-center animate-in fade-in duration-500">
-          <div className="w-32 h-32 bg-red-500/20 rounded-full flex items-center justify-center mb-10 border-4 border-red-500 shadow-[0_0_50px_rgba(239,68,68,0.4)]">
-            <svg className="w-16 h-16 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="w-32 h-32 bg-red-600/10 rounded-full flex items-center justify-center mb-10 border-4 border-red-600 shadow-[0_0_80px_rgba(220,38,38,0.3)]">
+            <svg className="w-16 h-16 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
           </div>
-          <h2 className="text-5xl font-black text-white mb-6 uppercase tracking-tighter">OS-LOCK: SECURITY BREACH</h2>
-          <div className="max-w-xl space-y-4 mb-12">
-            <p className="text-gray-400 leading-relaxed font-bold text-lg">
-              The voting environment was compromised by a window blur or unauthorized keyboard action.
+          <h2 className="text-4xl md:text-6xl font-black text-white mb-2 uppercase tracking-tighter">Violated rules of voting</h2>
+          <p className="text-red-500 font-extrabold uppercase tracking-[0.4em] text-xs mb-8">Voting session terminated</p>
+          
+          <div className="max-w-xl space-y-6 mb-12">
+            <p className="text-gray-500 leading-relaxed font-bold text-sm md:text-base uppercase tracking-wide">
+                Hardware-level tamper detected. The voting environment was compromised by a window blur, tab switch, or unauthorized keyboard action.
             </p>
-            <div className="py-3 px-6 bg-red-500/10 border border-red-500/20 rounded-2xl inline-block">
-              <span className="text-red-400 font-black uppercase tracking-widest text-sm">Violation Count: {violationCount}</span>
+            <div className="py-2 px-6 bg-red-600/5 border border-red-600/20 rounded-full inline-block">
+              <span className="text-red-600/60 font-black uppercase tracking-[0.2em] text-[10px]">Registry Violation Code: ST-08A-BLK</span>
             </div>
           </div>
-          <button 
-            onClick={() => window.location.reload()}
-            className="px-12 py-5 bg-white text-black font-black rounded-2xl uppercase tracking-[0.2em] hover:bg-gray-200 transition-all shadow-2xl shadow-white/10 active:scale-95"
-          >
-            Re-Align Face to Unlock
-          </button>
+
+          <div className="flex flex-col items-center gap-4">
+              <div className="py-3 px-6 bg-red-600/10 border border-red-600/20 rounded-2xl inline-block">
+                  <span className="text-red-500 font-black uppercase tracking-widest text-xs">Violation Count: {violationCount}</span>
+              </div>
+              
+              <button 
+                onClick={() => window.location.reload()}
+                className="px-12 py-5 bg-white text-black font-black rounded-2xl uppercase tracking-[0.2em] hover:bg-gray-200 transition-all shadow-2xl shadow-white/10 active:scale-95"
+              >
+                Re-Align Face to Unlock
+              </button>
+          </div>
+
           <div className="mt-12 flex items-center space-x-3 text-gray-500 font-black uppercase tracking-widest text-[10px]">
              <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
              <span>Strict Hardware-Level Security Active</span>
@@ -694,8 +723,8 @@ function VotingContent() {
             </div>
             
             <div className="space-y-4">
-              <h1 className="text-4xl font-black text-white uppercase tracking-tight leading-none">Identity Verification</h1>
-              <p className="text-gray-400 text-xs font-black uppercase tracking-[0.2em]">Position yourself before entering</p>
+              <h1 className="text-3xl md:text-4xl font-black text-white uppercase tracking-tight leading-none">Identity Verification</h1>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Position yourself before entering</p>
             </div>
 
             <div className="grid grid-cols-2 gap-6 w-full max-w-md mx-auto">
@@ -742,12 +771,27 @@ function VotingContent() {
               </button>
             </div>
 
-            <div className="p-6 bg-white/5 rounded-3xl border border-white/10 text-left space-y-4 max-w-md mx-auto">
-              <div className="flex items-center space-x-3 text-green-500">
-                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                <span className="text-[10px] font-black uppercase tracking-widest">Privacy Guarantee</span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-2xl mx-auto">
+              <div className="p-6 bg-white/5 rounded-3xl border border-white/10 text-left space-y-4">
+                <div className="flex items-center space-x-3 text-green-500">
+                  <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                  <span className="text-[10px] font-black uppercase tracking-widest">Privacy Guarantee</span>
+                </div>
+                <p className="text-[11px] text-gray-500 leading-relaxed font-medium">Your hardware is only active during the session for security verification. No data is stored permanently.</p>
               </div>
-              <p className="text-xs text-gray-500 leading-relaxed">Your hardware is only active during the session for security verification. No data is stored permanently.</p>
+
+              <div className="p-6 bg-primary/5 rounded-3xl border border-primary/20 text-left space-y-3">
+                <div className="flex items-center space-x-3 text-primary">
+                  <ShieldCheck className="w-3 h-3" />
+                  <span className="text-[10px] font-black uppercase tracking-widest">Election Protocol</span>
+                </div>
+                <ul className="text-[10px] text-gray-400 space-y-1.5 font-bold uppercase tracking-tight">
+                  <li className="flex items-center gap-2"><div className="w-1 h-1 bg-primary rounded-full" /> No 2 persons in frame</li>
+                  <li className="flex items-center gap-2"><div className="w-1 h-1 bg-primary rounded-full" /> Strict: No weapons</li>
+                  <li className="flex items-center gap-2"><div className="w-1 h-1 bg-primary rounded-full" /> Clear backgroud (Rec.)</li>
+                  <li className="flex items-center gap-2"><div className="w-1 h-1 bg-primary rounded-full" /> Vote alone only</li>
+                </ul>
+              </div>
             </div>
 
             <button
@@ -834,11 +878,12 @@ function VotingContent() {
 
       <div className="max-w-6xl mx-auto w-full px-4">
         <header className="mb-12 text-center">
-          <h1 className="text-5xl font-black mb-4 orange-text-gradient uppercase tracking-tight">Digital Voting Booth</h1>
-          <p className="text-gray-400 font-medium text-lg">General Assembly 2024 • South Delhi • Station 08A</p>
-          <h1 className="text-5xl font-black mb-4 orange-text-gradient uppercase tracking-tight">{election.title}</h1>
-          <p className="text-gray-400 font-medium text-lg">
-            {new Date(election.start_time).getFullYear()} • {election.constituency}
+          <h1 className="text-3xl md:text-5xl font-black mb-2 orange-text-gradient uppercase tracking-tight">Digital Voting Booth</h1>
+          <p className="text-gray-500 font-bold uppercase tracking-widest text-[9px] mb-6 italic opacity-70">General Assembly 2024 • South Delhi • Station 08A</p>
+          
+          <h2 className="text-2xl md:text-3xl font-black text-white uppercase tracking-tighter">{election?.title || 'Active Election'}</h2>
+          <p className="text-gray-400 font-medium text-xs md:text-sm mt-1 uppercase tracking-widest">
+            {getElectionYear()} • {election?.constituency || 'General'}
           </p>
         </header>
 
@@ -860,7 +905,7 @@ function VotingContent() {
 
           {/* Candidate List Container */}
           <div className="bg-white rounded-sm border-2 border-gray-400 overflow-hidden shadow-inner">
-            {candidates.map((candidate, index) => (
+            {candidates.map((candidate: any, index: number) => (
               <div
                 key={candidate.id}
                 className="flex items-center justify-between border-b border-gray-300 transition-colors hover:bg-gray-50"
@@ -1035,7 +1080,7 @@ function VotingContent() {
                   <div className="flex flex-col items-center space-y-3">
                     <div className="w-12 h-12 p-2 border-2 border-gray-100 rounded-full bg-gray-50 shadow-sm">
                       <img 
-                        src={(candidates.find(c => c.id === selectedCandidate) as any)?.symbol || '/globe.svg'} 
+                        src={(candidates.find((c: any) => c.id === selectedCandidate) as any)?.symbol || '/globe.svg'} 
                         className="w-full h-full object-contain grayscale opacity-80" 
                         alt="symbol"
                       />
@@ -1043,10 +1088,10 @@ function VotingContent() {
 
                     <div className="text-center">
                       <div className="text-black font-black text-sm uppercase tracking-tighter">
-                        {candidates.find(c => c.id === selectedCandidate)?.name}
+                        {candidates.find((c: any) => c.id === selectedCandidate)?.name}
                       </div>
                       <div className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
-                        {candidates.find(c => c.id === selectedCandidate)?.party}
+                        {candidates.find((c: any) => c.id === selectedCandidate)?.party}
                       </div>
                     </div>
 

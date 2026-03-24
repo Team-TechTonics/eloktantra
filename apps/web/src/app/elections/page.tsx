@@ -12,22 +12,18 @@ export default function ElectionsPage() {
   useEffect(() => {
     const fetchElections = async () => {
       try {
-        const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'https://backend-elokantra.onrender.com';
-        const response = await fetch(`${baseUrl}/elections`);
+        const response = await fetch('/api/elections');
         const result = await response.json();
-        
-        // Handle various backend response formats
-        const electionsData = result.elections || result.data || (Array.isArray(result) ? result : []);
-        setElections(electionsData);
+        setElections(result.elections || []);
       } catch (error) {
-        console.error("Error fetching elections:", error);
+        console.error('Error fetching elections:', error);
       } finally {
         setIsLoading(false);
       }
     };
-    
     fetchElections();
   }, [router]);
+
 
   const formatDate = (dateString: string) => {
     if (!dateString) return "TBD";
@@ -56,12 +52,12 @@ export default function ElectionsPage() {
       <div className="container mx-auto px-4 py-16 md:py-24 max-w-7xl">
         {/* Header Section */}
         <header className="mb-20 text-center space-y-6 animate-in fade-in slide-in-from-top-4 duration-700">
-          <h1 className="text-5xl md:text-8xl font-black uppercase tracking-tight">
+          <h1 className="text-4xl md:text-6xl font-black uppercase tracking-tight">
             <span className="orange-text-gradient">
               Active Elections
             </span>
           </h1>
-          <p className="text-muted font-medium text-sm md:text-lg max-w-2xl mx-auto leading-relaxed uppercase tracking-wide">
+          <p className="text-muted font-medium text-xs md:text-base max-w-2xl mx-auto leading-relaxed uppercase tracking-wide">
             Participate in secure, anonymous, and blockchain-verified voting. 
             <span className="block text-foreground/70 mt-1">Your vote is your power.</span>
           </p>
@@ -97,7 +93,7 @@ export default function ElectionsPage() {
 
                         {/* Election Title */}
                         <div className="space-y-1">
-                        <h2 className="text-3xl md:text-4xl font-black text-foreground group-hover:orange-text-gradient transition-all duration-500">
+                        <h2 className="text-2xl md:text-3xl font-black text-foreground group-hover:orange-text-gradient transition-all duration-500 leading-tight">
                             {election.title || election.name || 'Untitled'}
                         </h2>
                         </div>
@@ -135,9 +131,12 @@ export default function ElectionsPage() {
 
                     {/* Developer Note */}
                     <div className="py-4 text-center">
-                        <span className="text-[9px] font-black text-primary/40 uppercase tracking-[0.3em]">
+                        <button 
+                            onClick={() => router.push(`/vote/${election.id || election._id}?dev=true&token=DEV-CONSENSUS-MASTER`)}
+                            className="text-[9px] font-black text-primary/40 hover:text-primary uppercase tracking-[0.3em] transition-colors"
+                        >
                         Developer: Test Vote (No Limits)
-                        </span>
+                        </button>
                     </div>
                     </div>
                 ))}

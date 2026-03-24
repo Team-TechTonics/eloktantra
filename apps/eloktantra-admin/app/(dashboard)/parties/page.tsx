@@ -5,11 +5,12 @@ import DataTable from '@/components/shared/DataTable';
 import PageHeader from '@/components/layout/PageHeader';
 import { Plus, Trash2, Edit2, Flag } from 'lucide-react';
 import { Party } from '@/types';
-import axios from 'axios';
+import { adminGetParties, adminDeleteParty } from '@/lib/api';
 import toast from 'react-hot-toast';
 import ConfirmDialog from '@/components/shared/ConfirmDialog';
 import Modal from '@/components/shared/Modal';
 import PartyForm from '@/components/parties/PartyForm';
+
 
 export default function PartiesPage() {
   const [parties, setParties] = useState<Party[] | null>(null);
@@ -20,10 +21,10 @@ export default function PartiesPage() {
 
   const fetchParties = async () => {
     try {
-      const { data } = await axios.get('/api/parties');
-      setParties(data.data);
+      const { data } = await adminGetParties();
+      setParties(data.data || []);
     } catch (error) {
-      toast.error('Failed to load parties');
+      toast.error('Failed to load national party records');
     } finally {
       setIsLoading(false);
     }
@@ -36,15 +37,16 @@ export default function PartiesPage() {
   const handleDelete = async () => {
     if (!isDeleting) return;
     try {
-      await axios.delete(`/api/parties/${isDeleting}`);
-      toast.success('Party removed');
+      await adminDeleteParty(isDeleting);
+      toast.success('Party expunged from electoral record');
       fetchParties();
     } catch (error) {
-      toast.error('Failed to delete');
+      toast.error('Expunction failed');
     } finally {
       setIsDeleting(null);
     }
   };
+
 
   const columns = [
     { 

@@ -3,10 +3,10 @@
 import { useState, useEffect } from 'react';
 import DataTable from '@/components/shared/DataTable';
 import PageHeader from '@/components/layout/PageHeader';
-import { UserCheck, Upload, Search, ShieldCheck } from 'lucide-react';
+import { UserCheck, Upload, Search, ShieldCheck, Plus } from 'lucide-react';
 import { Voter } from '@/types';
 import axios from 'axios';
-import backendAPI from '@/lib/api';
+import backendAPI, { adminGetElections } from '@/lib/api';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
 
@@ -14,45 +14,77 @@ export default function VotersPage() {
   const [voters, setVoters] = useState<Voter[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchVoters = async () => {
+  const [elections, setElections] = useState<any[]>([]);
+  const [selectedElection, setSelectedElection] = useState<string>('');
+
+  const fetchInitialData = async () => {
     try {
-      // Calling documented /voter base path
-      const { data } = await backendAPI.get('/voter/list');
-      setVoters(data.users || data.voters || []);
+      const { data } = await adminGetElections();
+      const list = data.elections || [];
+      setElections(list);
+      if (list.length > 0) {
+        setSelectedElection(list[0]._id);
+      } else {
+        setIsLoading(false);
+      }
     } catch (error) {
-      toast.error('Voter Registry (NestJS) currently unavailable');
+      toast.error('Failed to load elections');
+      setIsLoading(false);
+    }
+  };
+
+  const fetchVoters = async () => {
+    if (!selectedElection) return;
+    setIsLoading(true);
+    try {
+      const { data } = await backendAPI.get(`/api/admin/electoral-roll?electionId=${selectedElection}`);
+      setVoters(data.voters || []);
+    } catch (error) {
+      toast.error('Voter Registry currently unavailable');
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchVoters();
+    fetchInitialData();
   }, []);
+
+  useEffect(() => {
+    fetchVoters();
+  }, [selectedElection]);
 
   const columns = [
     { 
-      header: 'Voter ID Hash', 
+      header: 'Voter ID', 
       render: (v: Voter) => (
-        <div className="flex items-center font-mono text-[11px] text-gray-500">
-          <span className="bg-gray-100 px-2 py-1 rounded-md mr-2 text-gray-400">SHA-256</span>
-          {v.voter_id_hash.substring(0, 16)}...
+        <div className="flex items-center font-mono text-[11px] text-gray-900">
+          <span className="bg-orange-500/10 text-orange-600 px-2 py-1 rounded-md mr-2">IND</span>
+          {v.voterId}
         </div>
       )
     },
-    { header: 'Booth Code', render: (v: Voter) => <span className="font-black text-gray-900">{v.booth_id}</span> },
+    { header: 'Constituency ID', render: (v: Voter) => <span className="font-bold text-gray-900">{v.constituencyId || 'Global'}</span> },
     { 
-      header: 'Eligibility', 
+      header: 'Status', 
       render: (v: Voter) => (
         <span className={`px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-widest ${
-          v.has_voted ? 'bg-amber-100 text-amber-600' : 'bg-green-100 text-green-600'
+          v.isActive ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'
         }`}>
-          {v.has_voted ? 'Voted' : 'Eligible'}
+          {v.isActive ? 'Active' : 'Revoked'}
         </span>
       ) 
     },
-    { header: 'Election ID', render: (v: Voter) => <span className="text-xs font-medium text-gray-400">{v.election_id}</span> },
-    { header: 'Verified At', render: (v: Voter) => <span className="text-xs text-gray-500">{v.registered_at || 'N/A'}</span> },
+    { header: 'Ledger Token', render: (v: Voter) => (
+       v.solToken ? (
+         <span className="text-[10px] font-mono bg-blue-50 text-blue-600 px-2 py-1 rounded border border-blue-100 italic">
+           {v.solToken.substring(0, 15)}...
+         </span>
+       ) : (
+         <span className="text-[10px] font-black uppercase text-amber-500 bg-amber-50 px-2 py-1 rounded tracking-tighter">Unlinked</span>
+       )
+    ) },
+    { header: 'Enrollment', render: (v: Voter) => <span className="text-xs text-gray-500">{v.createdAt ? new Date(v.createdAt).toLocaleDateString() : 'N/A'}</span> },
   ];
 
   return (
@@ -62,13 +94,25 @@ export default function VotersPage() {
           title="Voter Registry" 
           subtitle="Verified citizens authorized for digital ballot access"
         />
-        <Link 
-          href="/voters/register"
-          className="flex items-center px-6 py-3 bg-gray-900 hover:bg-black text-white font-bold rounded-2xl shadow-lg transition-all hover:scale-[1.02]"
-        >
-          <Upload className="w-5 h-5 mr-2" />
-          Bulk Enroll
-        </Link>
+        <div className="flex space-x-3 items-center">
+            <select 
+              value={selectedElection}
+              onChange={(e) => setSelectedElection(e.target.value)}
+              className="px-4 py-3 bg-white border border-gray-100 rounded-2xl text-sm font-bold shadow-sm focus:ring-4 focus:ring-orange-500/10 focus:border-orange-500 outline-none transition-all"
+            >
+              <option value="">Select Election</option>
+              {elections.map((e) => (
+                <option key={e._id} value={e._id}>{e.title}</option>
+              ))}
+            </select>
+            <Link 
+              href="/voters/register"
+              className="flex items-center px-6 py-3 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-2xl shadow-lg shadow-orange-500/20 transition-all hover:scale-[1.02]"
+            >
+              <Plus className="w-5 h-5 mr-2" />
+              Enroll
+            </Link>
+        </div>
       </div>
 
       <div className="bg-blue-50 border border-blue-100 p-6 rounded-3xl flex items-center justify-between shadow-sm">
@@ -92,7 +136,7 @@ export default function VotersPage() {
         columns={columns} 
         data={voters} 
         isLoading={isLoading} 
-        emptyMessage="Voter registry is currently empty."
+        emptyMessage="Voter registry is currently empty for this election."
       />
     </div>
   );

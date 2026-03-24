@@ -20,7 +20,7 @@ export default function OfficersPage() {
 
   const fetchOfficers = async () => {
     try {
-      const { data } = await backendAPI.get('/officer/list'); // Hypothetical
+      const { data } = await backendAPI.get('/api/admin/officer'); // Unified route
       setOfficers(Array.isArray(data) ? data : data.data || []);
     } catch (error) {
       console.error('Failed to load booth officers');
@@ -36,7 +36,7 @@ export default function OfficersPage() {
   const handleDelete = async () => {
     if (!isDeleting) return;
     try {
-      await backendAPI.delete(`/officer/${isDeleting}`);
+      await backendAPI.delete(`/api/admin/officer?id=${isDeleting}`);
       toast.success('Officer access revoked');
       fetchOfficers();
     } catch (error) {

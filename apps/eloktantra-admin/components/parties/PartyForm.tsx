@@ -3,7 +3,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import axios from 'axios';
+import { adminCreateParty } from '@/lib/api';
 import toast from 'react-hot-toast';
 import { Save, Loader2 } from 'lucide-react';
 
@@ -13,7 +13,7 @@ const partySchema = z.object({
   logo_url: z.string().url('Invalid URL').optional().or(z.literal('')),
   color: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, 'Invalid hex color').optional().or(z.literal('')),
   ideology: z.string().optional(),
-  founded_year: z.number().optional(),
+  founded_year: z.coerce.number().optional(),
   headquarters: z.string().optional(),
   president: z.string().optional(),
   website: z.string().url('Invalid URL').optional().or(z.literal('')),
@@ -38,18 +38,18 @@ export default function PartyForm({ onSuccess, initialData }: PartyFormProps) {
 
   const onSubmit = async (values: PartyFormValues) => {
     try {
-      if (initialData?._id) {
-        await axios.put(`/api/parties/${initialData._id}`, values);
-        toast.success('Party updated');
-      } else {
-        await axios.post('/api/parties', values);
-        toast.success('Party registered successfully');
-      }
+      // Unified Remote Command (Port 3000)
+      await adminCreateParty({
+        ...values,
+        id: initialData?._id
+      });
+      toast.success(initialData ? 'Party updated' : 'Party registered successfully');
       onSuccess();
     } catch (error: any) {
-      toast.error(error.response?.data?.error || 'Failed to save party');
+      toast.error(error.message || 'Failed to save party');
     }
   };
+
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">

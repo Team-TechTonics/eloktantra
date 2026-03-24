@@ -9,6 +9,7 @@ import { Save, Loader2, Shield } from 'lucide-react';
 
 const officerSchema = z.object({
   name: z.string().min(1, 'Name is required'),
+  username: z.string().min(1, 'Username is required'), // Added
   booth_id: z.string().min(1, 'Booth ID is required'),
   device_id: z.string().min(1, 'Device ID is required'),
   status: z.enum(['Online', 'Offline']).default('Offline'),
@@ -26,6 +27,7 @@ export default function OfficerForm({ onSuccess, initialData }: OfficerFormProps
     resolver: zodResolver(officerSchema),
     defaultValues: initialData || {
       name: '',
+      username: '', // Added
       booth_id: '',
       device_id: '',
       status: 'Offline',
@@ -35,10 +37,10 @@ export default function OfficerForm({ onSuccess, initialData }: OfficerFormProps
   const onSubmit = async (values: OfficerFormValues) => {
     try {
       if (initialData?._id || initialData?.id) {
-        await backendAPI.put(`/officer/${initialData._id || initialData.id}`, values);
+        await backendAPI.put(`/api/admin/officer?id=${initialData._id || initialData.id}`, values);
         toast.success('Officer updated');
       } else {
-        await backendAPI.post('/officer/onboard', values);
+        await backendAPI.post('/api/admin/officer', values);
         toast.success('Officer onboarded successfully');
       }
       onSuccess();
@@ -62,6 +64,16 @@ export default function OfficerForm({ onSuccess, initialData }: OfficerFormProps
           placeholder="e.g. Rajesh Kumar"
         />
         {errors.name && <p className="text-red-500 text-[10px] font-bold mt-1 uppercase">{errors.name.message}</p>}
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Officer Username</label>
+        <input 
+          {...register('username')}
+          className="w-full px-5 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none transition-all font-medium text-sm"
+          placeholder="e.g. rajesh_booth101"
+        />
+        {errors.username && <p className="text-red-500 text-[10px] font-bold mt-1 uppercase">{errors.username.message}</p>}
       </div>
 
       <div className="grid grid-cols-2 gap-4">

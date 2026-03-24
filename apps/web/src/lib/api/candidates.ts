@@ -19,21 +19,18 @@ export interface Candidate {
 }
 
 export const fetchCandidates = async (): Promise<Candidate[]> => {
-  const response = await fetch('/api/candidates');
-  const data = await response.json();
-  return data.candidates || [];
+  const { data } = await apiClient.get('/candidates');
+  return data.candidates || data.data || [];
 };
 
 export const fetchCandidateById = async (id: string): Promise<Candidate> => {
-  const response = await fetch(`/api/candidates?id=${id}`);
-  const data = await response.json();
-  return data.candidate;
+  const { data } = await apiClient.get(`/candidates?id=${id}`);
+  return data.candidate || data.data || data;
 };
 
 export const fetchCandidatesByConstituency = async (constituencyId: string): Promise<Candidate[]> => {
-  const response = await fetch(`/api/candidates?constituencyId=${constituencyId}`);
-  const data = await response.json();
-  return data.candidates || [];
+  const { data } = await apiClient.get(`/candidates/${constituencyId}`);
+  return data.candidates || data.data || [];
 };
 
 export const useCandidates = () => {

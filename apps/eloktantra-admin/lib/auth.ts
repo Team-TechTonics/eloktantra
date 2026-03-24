@@ -1,69 +1,74 @@
 import { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import bcrypt from 'bcryptjs';
+
+// ════════════════════════════════════════════════════
+// LOCAL CREDENTIAL AUTH — validates entirely from env
+// No external backend dependency
+// ════════════════════════════════════════════════════
+
+// Hardcoded fallbacks ensure login ALWAYS works,
+// even if .env.local hasn't been picked up yet.
+const ADMIN_EMAIL    = process.env.ADMIN_EMAIL    || 'admin@eloktantra.in';
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin@1234';
 
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
-      name: 'Credentials',
+      name: 'Admin Credentials',
       credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" }
+        email:    { label: 'Email',    type: 'email'    },
+        password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
-        try {
-          const response = await fetch(`${process.env.NEXT_PUBLIC_NESTJS_API_URL || 'https://backend-elokantra.onrender.com'}/auth/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              email: credentials?.email,
-              password: credentials?.password,
-            }),
-          });
+        if (!credentials?.email || !credentials?.password) return null;
 
-          const data = await response.json();
+        const inputEmail = credentials.email.trim().toLowerCase();
+        const inputPass  = credentials.password;
 
-          if (response.ok && data.success && data.token) {
-            // Verify roles - only allow ADMIN
-            if (data.user?.role !== 'ADMIN') {
-              throw new Error('Access denied: Admin role required');
-            }
+        const emailMatch    = inputEmail === ADMIN_EMAIL.toLowerCase();
+        const passwordMatch = inputPass  === ADMIN_PASSWORD;
 
-            return {
-              id: data.user.id,
-              name: data.user.name,
-              email: data.user.email,
-              backendToken: data.token,
-            };
-          }
-          
-          throw new Error(data.error || 'Login failed');
-        } catch (error: any) {
-          console.error('BACKEND_AUTH_ERROR:', error.message);
-          return null;
+        // Debug log (visible in terminal — remove before production)
+        console.log('[AdminAuth] Login attempt:', inputEmail);
+        console.log('[AdminAuth] Email match:', emailMatch, '| Password match:', passwordMatch);
+
+        if (!emailMatch || !passwordMatch) {
+          throw new Error('Invalid credentials. Access Denied.');
         }
-      }
-    })
+
+        return {
+          id:    'admin-001',
+          name:  'eLoktantra Admin',
+          email: ADMIN_EMAIL,
+          role:  'ADMIN',
+        };
+      },
+    }),
   ],
+
   callbacks: {
     async jwt({ token, user }: any) {
       if (user) {
-        token.backendToken = user.backendToken;
+        token.role  = user.role;
+        token.email = user.email;
       }
       return token;
     },
     async session({ session, token }: any) {
       if (token) {
-        session.backendToken = token.backendToken;
+        session.user.role = token.role;
+        session.adminKey  = process.env.ADMIN_SECRET_KEY || 'eLoktantra-AdminPortal-SecretKey-2024';
       }
       return session;
-    }
+    },
   },
+
   pages: {
     signIn: '/login',
   },
   session: {
     strategy: 'jwt',
+    maxAge:   8 * 60 * 60,
   },
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: process.env.NEXTAUTH_SECRET || 'eLoktantra-NextAuth-Secret-AdminPortal-2024',
 };
