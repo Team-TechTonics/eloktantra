@@ -15,7 +15,7 @@ import RecentActivity from '@/components/dashboard/RecentActivity';
 import VoteChart from '@/components/dashboard/VoteChart';
 
 /**
- * DASHBOARD : REAL-TIME MONITORING FROM PORT 3000 (CONTENT SOURCE OF TRUTH)
+ * DASHBOARD : REAL-TIME MONITORING FROM RENDER-ATLAS (CONTENT SOURCE OF TRUTH)
  * ENFORCES CORS & HIERARCHY
  */
 export default function DashboardPage() {
@@ -33,16 +33,16 @@ export default function DashboardPage() {
     const fetchDashboardData = async () => {
       try {
         const [cRes, pRes, coRes, eRes] = await Promise.all([
-          contentAPI.get('/api/candidates'),
-          contentAPI.get('/api/admin/party'), 
-          contentAPI.get('/api/admin/constituency'),
-          contentAPI.get('/admin/election/active'),
+          adminGetCandidates({}),
+          adminGetParties(),
+          adminGetConstituencies(),
+          adminGetActiveElection(),
         ]);
 
         const cList = Array.isArray(cRes.data) ? cRes.data : (cRes.data.data || cRes.data.candidates || []);
         const pList = Array.isArray(pRes.data) ? pRes.data : (pRes.data.data || []);
         const coList = Array.isArray(coRes.data) ? coRes.data : (coRes.data.data || coRes.data.constituencies || []);
-        const activeElection = eRes.data || { title: 'None Found', id: null };
+        const activeElection = eRes.data.data || eRes.data || { title: 'None Found', id: null };
         
         let voteCount = 0;
         const electionId = activeElection._id || activeElection.id;
@@ -64,7 +64,7 @@ export default function DashboardPage() {
           pendingSync: 0,
         });
       } catch (error) {
-        console.error('Failed to load dashboard data from Port 3000. Check CORS and Network.');
+        console.error('Unified Dashboard Sync Alert: Backend is unreachable or CORS blocked.');
       } finally {
         setIsLoading(false);
       }
@@ -78,7 +78,7 @@ export default function DashboardPage() {
       <div className="flex justify-between items-end">
         <PageHeader 
           title="System Overview" 
-          subtitle="Real-time insights across the democratic network (Port 3000 Source)"
+          subtitle="Real-time insights across the democratic network (Unified Render-Atlas Source)"
         />
         <div className="flex items-center space-x-2 bg-white border border-gray-100 px-4 py-2 rounded-2xl shadow-sm">
           <Clock className="w-4 h-4 text-amber-500" />

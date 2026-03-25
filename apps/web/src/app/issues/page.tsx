@@ -80,6 +80,44 @@ export default function IssuesHierarchyPage() {
     fetchIssues();
   }, [selectedElection, selectedConstituency]);
 
+  const [isReporting, setIsReporting] = useState(false);
+  const [newIssue, setNewIssue] = useState({ title: '', description: '' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleReport = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedElection || !selectedConstituency) {
+      alert('Please select an election and constituency first.');
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const res = await fetch('/api/issues', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...newIssue,
+          electionId: selectedElection,
+          constituencyId: selectedConstituency,
+          location: 'Voter Context', // Required by API
+          issueType: 'Citizen Report'
+        })
+      });
+      if (res.ok) {
+        setNewIssue({ title: '', description: '' });
+        setIsReporting(false);
+        // Refresh issues
+        const refresh = await fetch(`/api/issues?electionId=${selectedElection}&constituencyId=${selectedConstituency}`);
+        const data = await refresh.json();
+        setIssues(data.issues || []);
+      }
+    } catch (err) {
+      console.error('Report Err:', err);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#020408] text-white selection:bg-red-500/30">
       {/* Header */}
@@ -97,8 +135,85 @@ export default function IssuesHierarchyPage() {
           <p className="text-gray-400 font-medium text-lg max-w-2xl mx-auto leading-relaxed uppercase tracking-wide">
             Filter by election cycle and region to view local civic issues reported by verified voters.
           </p>
+          
+          <div className="mt-12">
+            <button 
+              onClick={() => setIsReporting(true)}
+              className="px-8 py-4 bg-red-600 hover:bg-red-500 text-white font-black uppercase tracking-widest rounded-2xl transition-all shadow-2xl shadow-red-600/20 flex items-center gap-2 mx-auto active:scale-95"
+            >
+              <AlertOctagon className="w-5 h-5" />
+              Report New Grievance
+            </button>
+          </div>
         </div>
       </section>
+
+      {/* Floating Action Button */}
+      <div className="fixed bottom-8 right-8 z-50">
+        <button 
+          onClick={() => setIsReporting(true)}
+          className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center shadow-2xl shadow-red-600/40 hover:scale-110 active:scale-90 transition-all border-4 border-white/10"
+        >
+          <MessageSquare className="w-6 h-6 text-white" />
+        </button>
+      </div>
+
+      {/* Reporting Modal */}
+      {isReporting && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center px-6">
+          <div className="absolute inset-0 bg-black/90 backdrop-blur-md" onClick={() => setIsReporting(false)} />
+          <div className="relative w-full max-w-xl bg-[#0d1117] border border-white/10 rounded-[2.5rem] p-10 shadow-2xl animate-in zoom-in-95 duration-200">
+            <h2 className="text-3xl font-black uppercase tracking-tighter mb-2">Report <span className="text-red-500">Issue</span></h2>
+            <p className="text-gray-500 text-xs font-bold uppercase tracking-widest mb-8">Direct channel to electoral moderators</p>
+
+            {!selectedElection || !selectedConstituency ? (
+              <div className="bg-red-500/10 border border-red-500/20 p-6 rounded-2xl mb-8 text-red-500 text-sm font-bold uppercase tracking-wide text-center">
+                Please close this and select a target Region/Election first.
+              </div>
+            ) : (
+              <form onSubmit={handleReport} className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">What is the problem?</label>
+                  <input 
+                    required
+                    type="text"
+                    placeholder="e.g. Broken streetlight in Ward 12"
+                    className="w-full h-14 bg-black/40 border border-white/10 rounded-2xl px-6 font-bold text-sm focus:border-red-500 outline-none transition-all"
+                    value={newIssue.title}
+                    onChange={e => setNewIssue({...newIssue, title: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Detail the grievance</label>
+                  <textarea 
+                    required
+                    rows={4}
+                    placeholder="Describe the impact, duration, and specific location..."
+                    className="w-full p-6 bg-black/40 border border-white/10 rounded-2xl font-bold text-sm focus:border-red-500 outline-none resize-none transition-all"
+                    value={newIssue.description}
+                    onChange={e => setNewIssue({...newIssue, description: e.target.value})}
+                  />
+                </div>
+                <div className="flex gap-4 pt-4">
+                  <button 
+                    type="button"
+                    onClick={() => setIsReporting(false)}
+                    className="flex-1 h-16 bg-white/5 hover:bg-white/10 text-white font-black uppercase tracking-widest rounded-2xl transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    disabled={isSubmitting}
+                    className="flex-[2] h-16 bg-red-600 hover:bg-red-500 text-white font-black uppercase tracking-widest rounded-2xl transition-all shadow-xl shadow-red-600/20 flex items-center justify-center gap-2"
+                  >
+                    {isSubmitting ? 'Submitting...' : 'Submit Report'}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Selector Flow (STICKY) */}
       <div className="sticky top-0 z-40 bg-[#020408]/80 backdrop-blur-3xl border-b border-white/5 py-6">

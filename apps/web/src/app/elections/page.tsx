@@ -12,11 +12,16 @@ export default function ElectionsPage() {
   useEffect(() => {
     const fetchElections = async () => {
       try {
-        const response = await fetch('/api/elections');
+        // Fetching from the central backend (Local Gateway or Render)
+        const baseUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'https://backend-elokantra.onrender.com';
+        const response = await fetch(`${baseUrl}/api/elections`);
         const result = await response.json();
-        setElections(result.elections || []);
+        
+        // Handle both standard list and wrapped object responses
+        const list = Array.isArray(result) ? result : (result.elections || result.data || []);
+        setElections(list);
       } catch (error) {
-        console.error('Error fetching elections:', error);
+        console.error('Election Ledger Sync Error:', error);
       } finally {
         setIsLoading(false);
       }

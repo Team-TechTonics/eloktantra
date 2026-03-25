@@ -13,6 +13,7 @@ const candidateRoutes = require('./routes/candidateRoutes');
 const electionRoutes = require('./routes/electionRoutes');
 const constituencyRoutes = require('./routes/constituencyRoutes');
 const partyRoutes = require('./routes/partyRoutes');
+const issueRoutes = require('./routes/issueRoutes');
 
 const app = express();
 app.use(express.json());
@@ -70,7 +71,9 @@ app.use('/api/admin/election', electionRoutes); // Admin portal alias
 app.use('/api/admin/constituency', constituencyRoutes); 
 app.use('/api/candidates', candidateRoutes); // Common alias
 app.use('/api/admin/candidate', candidateRoutes); // Admin portal alias
+app.use('/api/admin/issue', issueRoutes);
 app.use('/api/admin/party', partyRoutes);
+app.use('/api/issues', issueRoutes); // For user reporting
 
 // Error Handling Middleware
 app.use((err, req, res, next) => {

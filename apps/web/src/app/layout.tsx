@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import ClientProviders from './client-providers';
 import Navbar from '@/components/Navbar';
+import React from 'react';
 
 export const metadata: Metadata = {
   title: 'eLoktantra | Secure Digital Democracy',

@@ -32,8 +32,7 @@ export const contentAPI = api;
 export const votingAPI = api;
 export default api;
 
-// ─── CONTENT OPERATIONS (MongoDB) ───────────────────────────────────────────
-
+// CONTENT OPERATIONS
 export const adminGetConstituencies = (electionId?: string) =>
   votingAPI.get(`/api/admin/constituency${electionId ? `?electionId=${electionId}` : ''}`);
 
@@ -89,8 +88,7 @@ export const adminDeactivateElection = (id: string) =>
 export const adminGetActiveElection = () =>
   votingAPI.get('/admin/election/active');
 
-// ─── VOTING OPERATIONS (Render - Ledger Only) ─────────────────────────────
-
+// VOTING OPERATIONS
 /** Sync status with Blockchain Ledger */
 export const votingSyncElection = (id: string) =>
   votingAPI.patch(`/voting/elections/${id}`, { status: 'ACTIVE' });

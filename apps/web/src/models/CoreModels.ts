@@ -115,6 +115,8 @@ export interface IIssue extends Document {
   electionId: mongoose.Types.ObjectId;
   constituencyId: mongoose.Types.ObjectId;
   reportedCount: number;
+  status: 'PENDING' | 'RESOLVED' | 'REJECTED';
+  reportedBy?: string;
 }
 
 const IssueSchema = new Schema<IIssue>({
@@ -122,7 +124,9 @@ const IssueSchema = new Schema<IIssue>({
   description: { type: String, required: true },
   electionId: { type: Schema.Types.ObjectId, ref: 'Election', required: true },
   constituencyId: { type: Schema.Types.ObjectId, ref: 'Constituency', required: true },
-  reportedCount: { type: Number, default: 0 },
+  reportedCount: { type: Number, default: 1 },
+  status: { type: String, enum: ['PENDING', 'RESOLVED', 'REJECTED'], default: 'PENDING' },
+  reportedBy: { type: String },
 }, { timestamps: true });
 
 // ════════════════════════════════════════════════════
