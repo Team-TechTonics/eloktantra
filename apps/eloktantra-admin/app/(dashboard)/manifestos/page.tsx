@@ -36,19 +36,29 @@ export default function ManifestosAdmin() {
   };
 
   const fetchManifestos = async () => {
+    if (!selectedElection || !selectedConstituency) {
+      setManifestos([]);
+      return;
+    }
+    setLoading(true);
     try {
-      const res = await adminGetManifestos();
+      const res = await backendAPI.get(`/api/admin/manifesto?electionId=${selectedElection}&constituencyId=${selectedConstituency}`);
       const list = Array.isArray(res.data) ? res.data : (res.data.manifestos || res.data.data || []);
       setManifestos(list);
     } catch (err) {
        console.error('Failed to sync manifesto ledger');
+    } finally {
+        setLoading(false);
     }
   };
 
   useEffect(() => {
     fetchInitialData();
-    fetchManifestos();
   }, []);
+
+  useEffect(() => {
+    fetchManifestos();
+  }, [selectedElection, selectedConstituency]);
 
   useEffect(() => {
     if (!selectedElection) {
@@ -58,7 +68,11 @@ export default function ManifestosAdmin() {
     const fetchCons = async () => {
       try {
         const res = await adminGetConstituencies(selectedElection);
-        const list = Array.isArray(res.data) ? res.data : (res.data.constituencies || res.data.data || []);
+        // Robust data extraction (Render/Local/Standard compatibility)
+        const list = Array.isArray(res.data) 
+          ? res.data 
+          : (res.data.constituencies || res.data.data || res.data.list || []);
+          
         setConstituencies(list);
         setSelectedConstituency('');
         setCandidates([]);
@@ -128,11 +142,11 @@ export default function ManifestosAdmin() {
       {/* Header Info */}
       <div className="flex justify-between items-end">
         <div>
-          <div className="flex items-center gap-2 text-emerald-400 font-black uppercase tracking-widest text-[10px] mb-2">
+          <div className="flex items-center gap-2 text-emerald-600 font-black uppercase tracking-widest text-[10px] mb-2">
             <FileText className="w-3 h-3" />
             <span>Policy Platform Management</span>
           </div>
-          <h1 className="text-4xl font-black tracking-tight text-white uppercase italic">
+          <h1 className="text-4xl font-black tracking-tight text-gray-900 uppercase italic">
             Candidate <span className="text-emerald-500">Manifestos</span>
           </h1>
           <p className="text-gray-500 text-sm mt-1 max-w-lg font-bold uppercase tracking-wider">
@@ -140,7 +154,7 @@ export default function ManifestosAdmin() {
           </p>
         </div>
         <div className="flex gap-4">
-            <div className="px-6 py-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-[10px] font-black uppercase tracking-widest">
+            <div className="px-6 py-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 text-[10px] font-black uppercase tracking-widest">
                 Blueprints Deployed: {manifestos.length}
             </div>
         </div>
@@ -150,8 +164,8 @@ export default function ManifestosAdmin() {
         
         {/* Left: Configuration Form */}
         <div className="lg:col-span-4 space-y-6">
-          <div className="p-8 rounded-[2.5rem] bg-[#0c0c0c] border border-white/5 space-y-6 shadow-2xl">
-            <h3 className="text-xl font-black tracking-tight uppercase border-b border-white/5 pb-4 flex items-center gap-2">
+          <div className="p-8 rounded-[2.5rem] bg-white border border-gray-100 space-y-6 shadow-xl shadow-gray-200/50">
+            <h3 className="text-xl font-black tracking-tight text-gray-900 uppercase border-b border-gray-100 pb-4 flex items-center gap-2">
                 <Plus className="w-5 h-5 text-emerald-500" />
                 Create Platform
             </h3>
@@ -163,7 +177,7 @@ export default function ManifestosAdmin() {
                 <select 
                     value={selectedElection}
                     onChange={(e) => setSelectedElection(e.target.value)}
-                    className="w-full h-14 bg-black border-2 border-white/10 rounded-2xl px-4 font-bold text-sm focus:border-emerald-500 outline-none transition-all"
+                    className="w-full h-14 bg-gray-50 border-2 border-gray-100 rounded-2xl px-4 font-bold text-gray-900 text-sm focus:border-emerald-500 focus:bg-white outline-none transition-all"
                 >
                     <option value="">Select Election</option>
                     {elections.map(el => <option key={el.id || el._id} value={el.id || el._id}>{el.title || el.name}</option>)}
@@ -176,7 +190,7 @@ export default function ManifestosAdmin() {
                     value={selectedConstituency}
                     disabled={!selectedElection}
                     onChange={(e) => setSelectedConstituency(e.target.value)}
-                    className="w-full h-14 bg-black border-2 border-white/10 rounded-2xl px-4 font-bold text-sm focus:border-emerald-500 outline-none disabled:opacity-30 transition-all"
+                    className="w-full h-14 bg-gray-50 border-2 border-gray-100 rounded-2xl px-4 font-bold text-gray-900 text-sm focus:border-emerald-500 focus:bg-white outline-none disabled:opacity-30 transition-all"
                 >
                     <option value="">Select Constituency</option>
                     {constituencies.map(c => <option key={c.id || c._id} value={c.id || c._id}>{c.name}</option>)}
@@ -189,7 +203,7 @@ export default function ManifestosAdmin() {
                     value={selectedCandidate}
                     disabled={!selectedConstituency}
                     onChange={(e) => setSelectedCandidate(e.target.value)}
-                    className="w-full h-14 bg-black border-2 border-white/10 rounded-2xl px-4 font-bold text-sm focus:border-emerald-500 outline-none disabled:opacity-30 transition-all"
+                    className="w-full h-14 bg-gray-50 border-2 border-gray-100 rounded-2xl px-4 font-bold text-gray-900 text-sm focus:border-emerald-500 focus:bg-white outline-none disabled:opacity-30 transition-all"
                 >
                     <option value="">Select Candidate</option>
                     {candidates.map(c => <option key={c.id || c._id} value={c.id || c._id}>{c.name} ({c.party})</option>)}
@@ -202,7 +216,7 @@ export default function ManifestosAdmin() {
                 <input 
                   type="text"
                   placeholder="e.g. Vision 2030 (Digital Revolution)"
-                  className="w-full h-14 bg-black border-2 border-white/10 rounded-2xl px-4 font-bold text-sm focus:border-emerald-500 outline-none transition-all"
+                  className="w-full h-14 bg-gray-50 border-2 border-gray-100 rounded-2xl px-4 font-bold text-gray-900 text-sm focus:border-emerald-500 focus:bg-white outline-none transition-all"
                   value={newManifesto.title}
                   onChange={e => setNewManifesto({...newManifesto, title: e.target.value})}
                 />
@@ -213,7 +227,7 @@ export default function ManifestosAdmin() {
                 <textarea 
                   rows={4}
                   placeholder="Core platform details and ideology..."
-                  className="w-full p-4 bg-black border-2 border-white/10 rounded-2xl font-bold text-sm focus:border-emerald-500 outline-none resize-none transition-all"
+                  className="w-full p-4 bg-gray-50 border-2 border-gray-100 rounded-2xl font-bold text-gray-900 text-sm focus:border-emerald-500 focus:bg-white outline-none resize-none transition-all"
                   value={newManifesto.content}
                   onChange={e => setNewManifesto({...newManifesto, content: e.target.value})}
                 />
@@ -222,7 +236,7 @@ export default function ManifestosAdmin() {
               <button 
                 onClick={handleCreateManifesto}
                 disabled={loading}
-                className="w-full h-16 bg-emerald-600 hover:bg-emerald-500 text-white font-black uppercase tracking-widest rounded-2xl transition-all shadow-xl shadow-emerald-600/20 active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
+                className="w-full h-16 bg-emerald-600 hover:bg-emerald-500 text-white font-black uppercase tracking-widest rounded-2xl transition-all shadow-xl shadow-emerald-500/20 active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Plus className="w-5 h-5" /> Deploy Manifesto</>}
               </button>
@@ -234,48 +248,48 @@ export default function ManifestosAdmin() {
         <div className="lg:col-span-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {manifestos.length === 0 ? (
-                    <div className="col-span-full h-96 border-2 border-dashed border-white/5 rounded-[3.5rem] flex flex-col items-center justify-center text-center p-12 grayscale opacity-50">
-                        <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mb-6">
-                            <Tag className="w-10 h-10 text-gray-700" />
+                    <div className="col-span-full h-96 border-2 border-dashed border-gray-100 rounded-[3.5rem] flex flex-col items-center justify-center text-center p-12 grayscale opacity-50 bg-white">
+                        <div className="w-20 h-20 rounded-full bg-gray-50 flex items-center justify-center mb-6">
+                            <Tag className="w-10 h-10 text-gray-300" />
                         </div>
-                        <h3 className="text-2xl font-black uppercase tracking-tight text-gray-500">No Manifestos Deployed</h3>
-                        <p className="text-gray-600 font-black uppercase tracking-[0.2em] text-[10px] mt-2">Historical platforms will appear here once cryptographically verified.</p>
+                        <h3 className="text-2xl font-black uppercase tracking-tight text-gray-400">No Manifestos Deployed</h3>
+                        <p className="text-gray-400 font-black uppercase tracking-[0.2em] text-[10px] mt-2">Historical platforms will appear here once cryptographically verified.</p>
                     </div>
                 ) : (
                     manifestos.map((m) => (
-                        <div key={m.id || (m as any)._id} className="p-8 rounded-[3rem] bg-[#0c0c0c] border border-white/5 hover:border-emerald-500/30 transition-all group relative overflow-hidden">
-                             <div className="absolute top-0 right-0 p-6">
+                        <div key={m.id || (m as any)._id} className="p-8 rounded-[3rem] bg-white border border-gray-100 hover:border-emerald-500/30 transition-all group relative overflow-hidden shadow-sm hover:shadow-xl shadow-gray-200/50">
+                             <div className="absolute top-0 right-0 p-6 opacity-0 group-hover:opacity-100 transition-all">
                                 <button 
                                     onClick={() => handleDeleteManifesto(m.id || (m as any)._id)}
-                                    className="p-3 bg-red-500/10 text-red-500 rounded-2xl opacity-0 group-hover:opacity-100 transition-all hover:bg-red-500 hover:text-white"
+                                    className="p-3 bg-red-50/50 text-red-500 rounded-2xl hover:bg-red-500 hover:text-white transition-all shadow-sm"
                                 >
                                     <Trash2 className="w-4 h-4" />
                                 </button>
                              </div>
                              
                              <div className="flex items-center gap-4 mb-6">
-                                <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center overflow-hidden border border-white/10">
+                                <div className="w-16 h-16 rounded-2xl bg-gray-50 flex items-center justify-center overflow-hidden border border-gray-100 shadow-inner">
                                     {m.candidateId?.photo_url ? (
                                         <img src={m.candidateId.photo_url} alt={m.candidateId.name} className="w-full h-full object-cover" />
                                     ) : (
-                                        <User className="w-8 h-8 text-gray-700" />
+                                        <User className="w-8 h-8 text-gray-300" />
                                     )}
                                 </div>
                                 <div>
-                                    <h4 className="font-black text-white text-lg leading-tight truncate max-w-[180px]">{m.candidateId?.name || 'Unknown Candidate'}</h4>
+                                    <h4 className="font-black text-gray-900 text-lg leading-tight truncate max-w-[180px]">{m.candidateId?.name || 'Unknown Candidate'}</h4>
                                     <p className="text-emerald-500 text-[10px] font-black uppercase tracking-widest mt-1">{m.constituencyId?.name || 'Global'}</p>
                                 </div>
                              </div>
 
-                             <h3 className="text-xl font-black text-white mb-3 line-clamp-2">{m.title}</h3>
+                             <h3 className="text-xl font-black text-gray-900 mb-3 line-clamp-2">{m.title}</h3>
                              <p className="text-gray-500 text-sm font-medium line-clamp-4 leading-relaxed mb-6 italic">"{m.content}"</p>
                              
-                             <div className="flex items-center justify-between pt-6 border-t border-white/5">
+                             <div className="flex items-center justify-between pt-6 border-t border-gray-50">
                                 <div className="flex items-center gap-2">
                                     <ShieldCheck className="w-4 h-4 text-emerald-500/50" />
-                                    <span className="text-[10px] font-black text-gray-600 uppercase tracking-[0.2em]">Verified Blueprint</span>
+                                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Verified Blueprint</span>
                                 </div>
-                                <ArrowRight className="w-5 h-5 text-gray-800 group-hover:text-emerald-500 transition-colors" />
+                                <ArrowRight className="w-5 h-5 text-gray-200 group-hover:text-emerald-500 transition-colors" />
                              </div>
                         </div>
                     ))

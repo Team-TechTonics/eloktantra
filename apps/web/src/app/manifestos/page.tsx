@@ -44,19 +44,22 @@ export default function ManifestosPage() {
     fetchConstituencies();
   }, [selectedElection]);
 
-  // 3. Fetch Manifestos when constituency changes
+  // 3. Fetch Manifestos when hierarchy is locked
   useEffect(() => {
-    if (!selectedConstituency) return;
+    if (!selectedElection || !selectedConstituency) {
+        setManifestos([]);
+        return;
+    };
     const fetchManifestos = async () => {
       try {
-        const res = await axios.get(`/api/manifestos?constituencyId=${selectedConstituency}`);
+        const res = await axios.get(`/api/manifestos?electionId=${selectedElection}&constituencyId=${selectedConstituency}`);
         setManifestos(res.data.manifestos || []);
       } catch (err) {
         console.error('Failed to fetch manifestos', err);
       }
     };
     fetchManifestos();
-  }, [selectedConstituency]);
+  }, [selectedElection, selectedConstituency]);
 
   return (
     <div className="min-h-screen pt-24 pb-20 bg-[#050505] text-white">
