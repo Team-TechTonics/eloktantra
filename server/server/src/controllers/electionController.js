@@ -213,6 +213,22 @@ const getDashboardStats = async (req, res) => {
 };
 
 
+const deleteElection = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const Election = require('../models/Election');
+    await Election.findByIdAndDelete(id);
+    res.status(200).json({
+      message: "Election deleted successfully"
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Error deleting election",
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   getActiveElection,
   getElections,

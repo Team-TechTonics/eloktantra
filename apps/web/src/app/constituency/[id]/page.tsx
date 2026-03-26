@@ -37,15 +37,15 @@ export default function ConstituencyPage({ params }: { params: { id: string } })
                 </span>
                 
                 <div className="mt-4 flex gap-4 text-sm text-gray-600">
-                  <div className={`px-2 py-1 rounded font-semibold ${candidate.criminalCases > 0 ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
-                    Cases: {candidate.criminalCases}
+                  <div className={`px-2 py-1 rounded font-semibold ${candidate.criminal_cases > 0 ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
+                    Cases: {candidate.criminal_cases}
                   </div>
                 </div>
               </div>
               
               <div className="hidden sm:block text-right">
-                <div className="text-sm text-gray-500 font-medium uppercase tracking-wider mb-1">Declared Assets</div>
-                <div className="text-xl font-bold text-green-700">₹{candidate.assets.toLocaleString('en-IN')}</div>
+                <div className="text-sm text-gray-500 font-medium uppercase tracking-wider mb-1">Declared Net Worth</div>
+                <div className="text-xl font-bold text-green-700">{candidate.net_worth || 'N/A'}</div>
                 <div className="text-blue-600 mt-2 text-sm font-semibold group-hover:underline">View Profile →</div>
               </div>
             </div>

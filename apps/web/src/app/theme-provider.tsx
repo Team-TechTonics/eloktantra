@@ -15,11 +15,14 @@ const STORAGE_KEY = 'elok-theme';
 const DEFAULT_THEME: Theme = 'theme-dark';
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>(() => {
-    if (typeof window === 'undefined') return DEFAULT_THEME;
+  const [theme, setTheme] = useState<Theme>(DEFAULT_THEME);
+
+  useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY) as Theme | null;
-    return stored === 'theme-dark' || stored === 'theme-light' ? stored : DEFAULT_THEME;
-  });
+    if (stored === 'theme-dark' || stored === 'theme-light') {
+      setTheme(stored);
+    }
+  }, []);
 
   useEffect(() => {
     if (typeof document === 'undefined') return;

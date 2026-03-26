@@ -1,0 +1,10 @@
+﻿
+> eloktantra-monorepo@ dev C:\Users\Prithish\OneDrive\Desktop\eloktantra
+> turbo run dev --concurrency 20
+
+  x could not resolve workspaces: We detected multiple package managers in
+  | your repository: pnpm, npm. Please remove one of them.
+  `-> We detected multiple package managers in your repository: pnpm, npm.
+      Please remove one of them.
+
+ΓÇëELIFECYCLEΓÇë Command failed with exit code 1.

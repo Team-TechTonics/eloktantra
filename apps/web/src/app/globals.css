@@ -1,7 +1,9 @@
-/* Google Fonts must come first */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Google Fonts must come after tailwind directives if specified by manual step */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap');
-@import "tailwindcss";
-/* stylelint-disable at-rule-no-unknown */
 
 /* ═══════════════════════════════════════════════
    ELOKTANTRA — PREMIUM DESIGN SYSTEM v2.0

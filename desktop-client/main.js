@@ -25,7 +25,7 @@ function createWindow() {
   })
 
   // Load the web app
-  win.loadURL(`${APP_URL}/vote/electron-session`)
+  win.loadURL(`${APP_URL}/kiosk`)
 
   // 🚫 Disable dev tools
   win.webContents.on("devtools-opened", () => {
