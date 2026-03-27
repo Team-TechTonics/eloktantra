@@ -16,8 +16,8 @@ const getActiveElection = async (req, res) => {
 const getElections = async (req, res) => {
   try {
     const elections = await electionRepository.findAll();
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       elections: elections,
       data: elections // Backward compatibility with remote expectation
     });
@@ -29,7 +29,7 @@ const getElections = async (req, res) => {
 const createElection = async (req, res) => {
   try {
     const data = { ...req.body };
-    
+
     // Map frontend 'start_date' to model 'start_time'
     if (data.start_date && !data.start_time) {
       data.start_time = data.start_date;
@@ -82,15 +82,15 @@ const getElectionById = async (req, res) => {
     const { id } = req.params;
     const election = await electionRepository.findById(id);
     if (!election) {
-       return res.status(404).json({ error: 'Election not found' });
+      return res.status(404).json({ error: 'Election not found' });
     }
-    
+
     // Also fetch candidates for this election
     const Candidate = require('../models/Candidate');
     const candidates = await Candidate.find({ election_id: id });
-    
-    res.json({ 
-      success: true, 
+
+    res.json({
+      success: true,
       election: {
         ...election.toObject(),
         id: election._id,
@@ -109,7 +109,7 @@ const updateElection = async (req, res) => {
   try {
     const { id } = req.params;
     const data = { ...req.body };
-    
+
     // Map dates
     if (data.start_date && !data.start_time) data.start_time = data.start_date;
     if (data.end_date && !data.end_time) data.end_time = data.end_date;
@@ -138,7 +138,7 @@ const getElectionResults = async (req, res) => {
     ]);
 
     const candidates = await Candidate.find({ election_id: id });
-    
+
     const results = candidates.map(c => {
       const voteData = voteCounts.find(v => v._id.toString() === c._id.toString());
       return {
@@ -178,7 +178,7 @@ const getDashboardStats = async (req, res) => {
     }
 
     const Candidate = require('../models/Candidate');
-    const Vote = require('../models/Vote'); 
+    const Vote = require('../models/Vote');
     const Issue = require('../models/Issue');
     const Election = require('../models/Election');
 
@@ -192,7 +192,7 @@ const getDashboardStats = async (req, res) => {
       Election.find({ status: 'ACTIVE' }).sort({ createdAt: -1 }).limit(5),
     ]);
 
-    const timeoutPromise = new Promise((_, reject) => 
+    const timeoutPromise = new Promise((_, reject) =>
       setTimeout(() => reject(new Error('Dashboard Stats Timeout')), 5000)
     );
 
@@ -218,10 +218,10 @@ const getDashboardStats = async (req, res) => {
     });
   } catch (error) {
     console.error('Dashboard Stats Error:', error.message);
-    res.status(200).json({ 
-      success: true, 
+    res.status(200).json({
+      success: true,
       stats: { totalCandidates: 0, totalVotes: 0, activeElections: 0, openIssues: 0 },
-      error: 'Data retrieval partially failed' 
+      error: 'Data retrieval partially failed'
     });
   }
 };

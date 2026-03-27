@@ -10,7 +10,7 @@ const BASE_API_URL = (process.env.NEXT_PUBLIC_WEB_API_URL || 'https://backend-el
  */
 const api = axios.create({
   baseURL: BASE_API_URL,
-  timeout: 60000, 
+  timeout: 60000,
 });
 
 api.interceptors.request.use(async (config) => {
