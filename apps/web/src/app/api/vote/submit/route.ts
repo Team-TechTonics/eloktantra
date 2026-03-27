@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const res = await axios.post(`${BACKEND_URL}/vote/submit`, body, {
+    const res = await axios.post(`${BACKEND_URL}/vote`, body, {
       headers: {
         'Authorization': authHeader,
         'x-admin-key': process.env.ADMIN_API_KEY || 'eLoktantra-AdminPortal-SecretKey-2024'

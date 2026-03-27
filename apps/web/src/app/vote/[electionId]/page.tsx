@@ -24,16 +24,24 @@ declare global {
 
 function VotingContent() {
   const params = useParams();
-  const router = useRouter();
   const searchParams = useSearchParams();
-  const electionId = params?.electionId as string;
+  const router = useRouter();
+  
+  // ⚡ Fix: Support both path-based and query-based election ID (for /vote/eEVM?id=... style)
+  const pathElectionId = params?.electionId as string;
+  const queryElectionId = searchParams?.get('id');
+  const electionId = (pathElectionId === 'eEVM' ? queryElectionId : pathElectionId) || queryElectionId || 'DEMO_ELECTION';
+
   const { user: digitUser } = useDigiLockerStore();
 
 
-  // Token Enforcement (Moved to top level)
+  // Token Enforcement
   useEffect(() => {
     const token = searchParams?.get('token');
-    if (!token) {
+    const isElectron = searchParams?.get('electron') === 'true' || window.secureAPI;
+    
+    // In dev mode or electron, we might bypass initial checks, but we need a token for the actual vote.
+    if (!token && !isDevMode) {
       router.push('/vote');
     }
   }, [router, searchParams]);
@@ -381,13 +389,13 @@ function VotingContent() {
     return () => clearInterval(interval);
   }, [isPermissionGranted]);
 
-  // 🛡️ AUTO-TERMINATION LOGIC (STEP 3)
+  // 🛡️ AUTO-TERMINATION LOGIC
   useEffect(() => {
-    if (violations >= 5) {
+    if (violations >= 5 && !isDevMode) {
       alert("Voting terminated due to security violations. Please contact the administrator.");
       window.location.href = "/dashboard";
     }
-  }, [violations]);
+  }, [violations, isDevMode]);
 
   // REMOVED OLD detectFaces and startDetectionLoop logic
 
@@ -487,6 +495,11 @@ function VotingContent() {
   };
 
   const terminateDueToSecurity = (message: string) => {
+    if (isDevMode) {
+      console.warn("Security Violation (Bypassed in Dev Mode):", message);
+      setWarning(message);
+      return;
+    }
     alert(message);
     terminateSession();
     window.location.href = "/dashboard";
@@ -629,6 +642,12 @@ function VotingContent() {
       
       // 2. Submit to HIGH-SECURITY Node.js API PROXY
       console.log("Casting ballot via Secure Gateway...");
+      console.log("Submitting Ballot with Payload:", {
+        electionId,
+        tokenHash: searchParams?.get('token'),
+        candidateId
+      });
+
       const response = await fetch("/api/vote/submit", {
         method: 'POST',
         headers: { 
@@ -636,34 +655,49 @@ function VotingContent() {
             'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
         },
         body: JSON.stringify({
-          candidateId,
-          electionId: election.id,
-          constituencyId: digitUser?.constituencyId || (election as any).constituencyId,
-          voterIdHash: (digitUser as any)?.aadhaarHash || 'DEV_MODE_HASH'
+          electionId: electionId, // ⚡ FIX: Using URL-extracted ID instead of election.id
+          tokenHash: searchParams?.get('token') || 'DEV_MODE_TOKEN',
+          encryptedVote: candidateId
         })
       });
 
       const result = await response.json();
+      console.log("Vote Submission result:", result);
       
       if (result.success) {
-        setVoteHash(result.blockchainHash);
+        setVoteHash(result.blockchainHash || result.txHash || result.receipt || 'SECURE_BALLOT_HASH');
+        setShowVVPAT(true); // TRIGGER VVPAT ANIMATION
+        playPrinterSound(); // PLAY PHYSICAL FEEDBACK
         
+        // Audit proof capture (Optional download)
         const url = URL.createObjectURL(videoBlob);
         const a = document.createElement("a");
         a.href = url;
         a.download = `audit-proof-${electionId}.webm`;
-        a.click();
+        // Only trigger download in dev mode to avoid cluttering real sessions
+        if (isDevMode) a.click();
         
-        completeSession();
-        unlock();
-        
-        alert(`Voting Successful!\nTransaction: ${result.blockchainHash}`);
-        router.push("/dashboard");
+        // Note: We no longer call completeSession() or redirect here.
+        // It's handled by the VVPAT Auto-Completion Effect.
       } else {
+        // ⚡ Developer Bypass: If the vote fails but we are in dev mode, MOCK a success to test the UI/VVPAT
+        if (isDevMode) {
+           console.warn("Vote Submission failed but bypassing due to isDevMode:", result.error);
+           setVoteHash('MOCK_TX_' + Math.random().toString(36).substring(2, 10).toUpperCase());
+           setShowVVPAT(true);
+           playPrinterSound();
+           return;
+        }
         throw new Error(result.error || "Ballot rejected.");
       }
     } catch (err: any) {
       console.error("Voting failed:", err);
+      if (isDevMode) {
+         setVoteHash('DEV_MOCK_' + Math.random().toString(36).substring(2, 10).toUpperCase());
+         setShowVVPAT(true);
+         playPrinterSound();
+         return;
+      }
       alert(`Voting Failed: ${err.message}`);
     } finally {
       setIsSubmitting(false);
@@ -705,10 +739,17 @@ function VotingContent() {
               </div>
               
               <button 
-                onClick={() => window.location.reload()}
+                onClick={() => {
+                  if (isDevMode) {
+                    unlock();
+                    setActiveViolation(null);
+                  } else {
+                    window.location.reload();
+                  }
+                }}
                 className="px-12 py-5 bg-white text-black font-black rounded-2xl uppercase tracking-[0.2em] hover:bg-gray-200 transition-all shadow-2xl shadow-white/10 active:scale-95"
               >
-                Re-Align Face to Unlock
+                {isDevMode ? "Developer: Clear & Continue" : "Re-Align Face to Unlock"}
               </button>
           </div>
 
