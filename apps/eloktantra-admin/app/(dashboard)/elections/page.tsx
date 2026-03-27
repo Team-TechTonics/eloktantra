@@ -11,6 +11,7 @@ import Link from 'next/link';
 
 export default function ElectionsPage() {
   const [elections, setElections] = useState<Election[] | null>(null);
+  const [activeTab, setActiveTab] = useState<'live' | 'archived'>('live');
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchElections = async () => {
@@ -46,6 +47,18 @@ export default function ElectionsPage() {
     }
   };
 
+  const filteredElections = (elections || []).filter(e => {
+    const endDateStr = e.end_time || e.endDate;
+    const isExpired = endDateStr ? new Date(endDateStr) < new Date() : false;
+    const isCompleted = e.status === 'COMPLETED' || e.status === 'ENDED';
+    
+    if (activeTab === 'live') {
+      return !isExpired && !isCompleted;
+    } else {
+      return isExpired || isCompleted;
+    }
+  });
+
   const columns = [
     { 
       header: 'Election Name', 
@@ -69,20 +82,21 @@ export default function ElectionsPage() {
         const isActive = e.is_active !== undefined ? e.is_active : e.isActive;
         const endDateStr = e.end_time || e.endDate;
         const isExpired = endDateStr ? new Date(endDateStr) < new Date() : false;
+        const isCompleted = e.status === 'COMPLETED' || e.status === 'ENDED';
 
-        if (isExpired) {
+        if (isCompleted || isExpired) {
           return (
             <span className="px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border bg-red-50 text-red-600 border-red-100">
-              EXPIRED
+              {isCompleted ? 'COMPLETED' : 'EXPIRED'}
             </span>
           );
         }
 
         return (
           <span className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border ${
-            isActive ? 'bg-green-50 text-green-600 border-green-100' : 'bg-gray-50 text-gray-400 border-gray-100'
+            isActive ? 'bg-green-50 text-green-600 border-green-100' : 'bg-blue-50 text-blue-600 border-blue-100'
           }`}>
-            {isActive ? 'ACTIVE' : 'INACTIVE'}
+            {isActive ? 'ACTIVE' : 'UPCOMING'}
           </span>
         );
       } 
@@ -110,10 +124,11 @@ export default function ElectionsPage() {
       render: (e: Election) => {
         const endDateStr = e.end_time || e.endDate;
         const isExpired = endDateStr ? new Date(endDateStr) < new Date() : false;
+        const isCompleted = e.status === 'COMPLETED' || e.status === 'ENDED';
 
         return (
           <div className="flex items-center space-x-2">
-            {!(e.is_active || e.isActive) && !isExpired && (
+            {!(e.is_active || e.isActive) && !isExpired && !isCompleted && (
               <button 
                 onClick={() => handleActivate(e.id || e._id || '')}
                 className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-[10px] font-black uppercase tracking-widest rounded-lg flex items-center shadow-lg transition-all"

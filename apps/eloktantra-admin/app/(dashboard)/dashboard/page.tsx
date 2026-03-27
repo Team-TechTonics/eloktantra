@@ -9,10 +9,12 @@ import {
   adminGetCandidates, 
   adminGetParties, 
   adminGetConstituencies, 
-  adminGetActiveElection 
+  adminGetActiveElection,
+  adminGetElections
 } from '@/lib/api';
 import RecentActivity from '@/components/dashboard/RecentActivity';
 import VoteChart from '@/components/dashboard/VoteChart';
+import ActivePollingStreams from '@/components/dashboard/ActivePollingStreams';
 
 /**
  * DASHBOARD : REAL-TIME MONITORING FROM RENDER-ATLAS (CONTENT SOURCE OF TRUTH)
@@ -27,22 +29,25 @@ export default function DashboardPage() {
     totalVotes: 0,
     pendingSync: 0,
   });
+  const [elections, setElections] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const [cRes, pRes, coRes, eRes] = await Promise.all([
+        const [cRes, pRes, coRes, eRes, allERes] = await Promise.all([
           adminGetCandidates({}),
           adminGetParties(),
           adminGetConstituencies(),
           adminGetActiveElection(),
+          adminGetElections()
         ]);
 
         const cList = Array.isArray(cRes.data) ? cRes.data : (cRes.data.data || cRes.data.candidates || []);
         const pList = Array.isArray(pRes.data) ? pRes.data : (pRes.data.data || []);
         const coList = Array.isArray(coRes.data) ? coRes.data : (coRes.data.data || coRes.data.constituencies || []);
         const activeElection = eRes.data.data || eRes.data || { title: 'None Found', id: null };
+        const allElections = Array.isArray(allERes.data) ? allERes.data : (allERes.data.elections || allERes.data.data || []);
         
         let voteCount = 0;
         const electionId = activeElection._id || activeElection.id;
@@ -63,6 +68,7 @@ export default function DashboardPage() {
           totalVotes: voteCount,
           pendingSync: 0,
         });
+        setElections(allElections);
       } catch (error) {
         console.error('Unified Dashboard Sync Alert: Backend is unreachable or CORS blocked.');
       } finally {
@@ -95,6 +101,9 @@ export default function DashboardPage() {
         <StatsCard title="Sync Pending" value={stats.pendingSync} icon={Hash} color="bg-gray-700" />
       </div>
 
+      {/* Premium Election Feed */}
+      <ActivePollingStreams elections={elections} loading={isLoading} />
+
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
         <VoteChart />
         <RecentActivity />
@@ -102,3 +111,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+

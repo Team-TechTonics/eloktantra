@@ -21,6 +21,7 @@ export default function DashboardPage() {
   const [elections, setElections] = useState<any[]>([]);
   const [issues, setIssues] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [dataSource, setDataSource] = useState<'live' | 'simulated'>('live');
 
   useEffect(() => {
     apiClient.get('/dashboard')
@@ -30,6 +31,7 @@ export default function DashboardPage() {
           setStats(data.stats);
           setElections(data.activeElections || []);
           setIssues(data.recentIssues || []);
+          setDataSource(data.source || 'live');
         }
       })
       .catch(err => console.error('Dashboard Err:', err))
@@ -54,9 +56,18 @@ export default function DashboardPage() {
         {/* Superior Header */}
         <header className="mb-16 flex flex-col md:flex-row md:items-end justify-between gap-8">
           <div className="space-y-4">
-            <div className="inline-flex items-center px-4 py-2 rounded-full border border-primary/20 bg-primary/5 backdrop-blur-xl">
-              <ShieldCheck className="w-4 h-4 text-primary mr-2" />
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Biometric Authenticated Session</span>
+            <div className="flex flex-wrap gap-3">
+              <div className="inline-flex items-center px-4 py-2 rounded-full border border-primary/20 bg-primary/5 backdrop-blur-xl">
+                <ShieldCheck className="w-4 h-4 text-primary mr-2" />
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary">Biometric Authenticated Session</span>
+              </div>
+              
+              {dataSource === 'simulated' && (
+                <div className="inline-flex items-center px-4 py-2 rounded-full border border-orange-500/20 bg-orange-500/5 backdrop-blur-xl animate-pulse">
+                  <div className="w-1.5 h-1.5 rounded-full bg-orange-500 mr-2 shadow-[0_0_8px_rgba(249,115,22,0.8)]" />
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-orange-500">Local Ledger Sync Active</span>
+                </div>
+              )}
             </div>
             <h1 className="text-6xl md:text-8xl font-black uppercase tracking-tighter leading-none">
                 Command <br /> <span className="text-primary/10 stroke-text border-primary">Center</span>
@@ -110,7 +121,7 @@ export default function DashboardPage() {
                       <div className="flex items-center space-x-6">
                         <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center font-bold text-primary group-hover:bg-primary group-hover:text-white transition-all">0{idx+1}</div>
                         <div>
-                          <h3 className="text-xl font-black uppercase tracking-tight">{e.title}</h3>
+                          <h3 className="text-xl font-black uppercase tracking-tight">{e.title || e.name || 'Untitled Election'}</h3>
                           <div className="flex items-center text-[10px] font-black text-gray-500 uppercase tracking-widest mt-1">
                             <span className="text-primary mr-2">POLLING OPEN</span> · {e.constituency || 'National Scope'}
                           </div>

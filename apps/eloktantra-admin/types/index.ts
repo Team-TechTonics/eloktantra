@@ -38,6 +38,7 @@ export interface Election {
   name: string; // Standardized with NestJS
   title?: string; // Alias for backward compatibility
   type: 'General' | 'State';
+  status?: string; // Standardized with NestJS (UPCOMING, ACTIVE, COMPLETED, ENDED)
   start_time: string; // Standardized with NestJS
   startDate?: string; // Alias
   end_time: string; // Standardized with NestJS

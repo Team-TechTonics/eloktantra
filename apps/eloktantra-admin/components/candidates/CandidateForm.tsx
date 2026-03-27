@@ -62,7 +62,7 @@ export default function CandidateForm({ initialData, id }: { initialData?: any, 
           adminGetConstituencies(),
           adminGetElections()
         ]);
-        
+
         // NestJS returns arrays directly or in .data
         const pList = Array.isArray(pRes.data) ? pRes.data : (pRes.data.data || []);
         const cList = Array.isArray(cRes.data) ? cRes.data : (cRes.data.data || []);
@@ -114,7 +114,7 @@ export default function CandidateForm({ initialData, id }: { initialData?: any, 
       <div className="flex border-b border-gray-100 overflow-x-auto">
         {tabs.map((tab) => {
           // Check if any fields in this tab have errors
-          const hasError = 
+          const hasError =
             (tab.id === 'basic' && (errors.name || errors.partyId || errors.constituencyId || errors.age || errors.gender)) ||
             (tab.id === 'election' && (errors.electionId));
 
@@ -136,18 +136,18 @@ export default function CandidateForm({ initialData, id }: { initialData?: any, 
         })}
       </div>
 
-      <form 
+      <form
         onSubmit={handleSubmit(onSubmit, (errors) => {
           console.error('FORM_VALIDATION_ERRORS:', errors);
           toast.error('Validation failed! Please check all tabs for required fields.');
-        })} 
+        })}
         className="p-10"
       >
         {activeTab === 'basic' && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-2">
               <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Full Name <span className="text-red-500">*</span></label>
-              <input 
+              <input
                 {...register('name')}
                 className={`w-full px-5 py-3.5 bg-gray-50 border ${errors.name ? 'border-red-500/50 bg-red-50/10' : 'border-gray-100'} rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all font-medium`}
                 placeholder="e.g. Narendra Modi"
@@ -157,12 +157,12 @@ export default function CandidateForm({ initialData, id }: { initialData?: any, 
 
             <div className="space-y-2">
               <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Political Party <span className="text-red-500">*</span></label>
-              <select 
+              <select
                 value={watch('partyId')}
                 onChange={(e) => {
                   const partyId = e.target.value;
                   const party = parties.find(p => (p.id || (p as any)._id) === partyId);
-                  
+
                   setValue('partyId', partyId, { shouldValidate: true });
                   if (party) {
                     setValue('party', party.name, { shouldValidate: true });
@@ -184,12 +184,12 @@ export default function CandidateForm({ initialData, id }: { initialData?: any, 
 
             <div className="space-y-2">
               <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Constituency <span className="text-red-500">*</span></label>
-              <select 
+              <select
                 value={watch('constituencyId')}
                 onChange={(e) => {
                   const constiId = e.target.value;
                   const consti = constituencies.find(c => (c.id || (c as any)._id) === constiId);
-                  
+
                   setValue('constituencyId', constiId, { shouldValidate: true });
                   if (consti) {
                     setValue('constituency', consti.name, { shouldValidate: true });
@@ -212,7 +212,7 @@ export default function CandidateForm({ initialData, id }: { initialData?: any, 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Age</label>
-                <input 
+                <input
                   type="number"
                   {...register('age', { valueAsNumber: true })}
                   className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all font-medium"
@@ -220,7 +220,7 @@ export default function CandidateForm({ initialData, id }: { initialData?: any, 
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Gender</label>
-                <select 
+                <select
                   {...register('gender')}
                   className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all font-medium appearance-none cursor-pointer"
                 >
@@ -233,7 +233,7 @@ export default function CandidateForm({ initialData, id }: { initialData?: any, 
 
             <div className="space-y-2 md:col-span-2">
               <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Education Qualification</label>
-              <input 
+              <input
                 {...register('education')}
                 className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all font-medium"
                 placeholder="e.g. M.A. in Political Science"
@@ -247,7 +247,7 @@ export default function CandidateForm({ initialData, id }: { initialData?: any, 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-2">
                 <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Declared Net Worth</label>
-                <input 
+                <input
                   {...register('net_worth')}
                   className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all font-medium"
                   placeholder="e.g. ₹1.5 Cr"
@@ -255,7 +255,7 @@ export default function CandidateForm({ initialData, id }: { initialData?: any, 
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Criminal Cases</label>
-                <input 
+                <input
                   type="number"
                   {...register('criminal_cases', { valueAsNumber: true })}
                   className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all font-medium"
@@ -264,7 +264,7 @@ export default function CandidateForm({ initialData, id }: { initialData?: any, 
             </div>
             <div className="space-y-2">
               <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Case Details (If any)</label>
-              <textarea 
+              <textarea
                 {...register('criminal_details')}
                 rows={4}
                 className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all font-medium resize-none"
@@ -278,7 +278,7 @@ export default function CandidateForm({ initialData, id }: { initialData?: any, 
           <div className="space-y-8">
             <div className="space-y-2">
               <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Active Election Link <span className="text-red-500">*</span></label>
-              <select 
+              <select
                 {...register('electionId')}
                 className={`w-full px-5 py-3.5 bg-gray-50 border ${errors.electionId ? 'border-red-500/50 bg-red-50/10' : 'border-gray-100'} rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all font-medium appearance-none cursor-pointer`}
               >
@@ -291,7 +291,7 @@ export default function CandidateForm({ initialData, id }: { initialData?: any, 
 
             <div className="space-y-2">
               <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Manifesto Summary</label>
-              <textarea 
+              <textarea
                 {...register('manifesto_summary')}
                 rows={5}
                 className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all font-medium resize-none"
@@ -305,7 +305,7 @@ export default function CandidateForm({ initialData, id }: { initialData?: any, 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-2 md:col-span-2">
               <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Profile Photo URL</label>
-              <input 
+              <input
                 {...register('photo_url')}
                 className={`w-full px-5 py-3.5 bg-gray-50 border ${errors.photo_url ? 'border-red-500/50 bg-red-50/10' : 'border-gray-100'} rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all font-medium`}
                 placeholder="https://example.com/photo.jpg"
@@ -314,7 +314,7 @@ export default function CandidateForm({ initialData, id }: { initialData?: any, 
             </div>
             <div className="space-y-2">
               <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Twitter (X) Profile</label>
-              <input 
+              <input
                 {...register('social_links.twitter')}
                 className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all font-medium"
                 placeholder="@username"
@@ -322,7 +322,7 @@ export default function CandidateForm({ initialData, id }: { initialData?: any, 
             </div>
             <div className="space-y-2">
               <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Facebook Page</label>
-              <input 
+              <input
                 {...register('social_links.facebook')}
                 className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all font-medium"
                 placeholder="https://facebook.com/..."
@@ -339,7 +339,7 @@ export default function CandidateForm({ initialData, id }: { initialData?: any, 
           >
             <X className="w-4 h-4 mr-2" /> Cancel
           </button>
-          
+
           <div className="flex space-x-3">
             {activeTab !== 'social' ? (
               <button

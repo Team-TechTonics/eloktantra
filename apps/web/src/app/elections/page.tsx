@@ -23,9 +23,14 @@ export default function ElectionsPage() {
         let list = Array.isArray(result) ? result : (result.elections || result.data || []);
         
         // Match the same logic used in the admin portal to identify active elections
+        const now = new Date();
         list = list.filter((e: any) => {
           const isActive = e.is_active !== undefined ? e.is_active : e.isActive;
-          return isActive === true || isActive === 'true'; // Keep truthy
+          const endTime = e.end_time || e.end_date || e.endDate;
+          const isExpired = endTime ? new Date(endTime) < now : false;
+          const isCompleted = e.status === 'COMPLETED' || e.status === 'ENDED' || e.status === 'EXPIRED';
+          
+          return (isActive === true || isActive === 'true') && !isExpired && !isCompleted;
         });
 
         // Filter by constituency if not Dev Mode

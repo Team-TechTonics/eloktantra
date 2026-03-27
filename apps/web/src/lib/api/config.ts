@@ -11,11 +11,16 @@ export const getBackendUrl = () => {
               process.env.NEXT_PUBLIC_API_URL || 
               'https://backend-elokantra.onrender.com';
   
-  // Safety Check: If the URL points to the local frontend (loopback), 
-  // we MUST force it to the Render backend to prevent infinite recursion/EMFILE.
+  // Safety Check: If the URL points to the local frontend (loopback:3000), 
+  // we MUST force it to a backend to prevent infinite recursion.
+  // BUT we should allow local backends on other ports (e.g. 5001).
   if (url.includes('localhost:3000')) {
-    console.warn('API CONFIG: Local loopback detected. Forcing Render backend for proxy stability.');
+    console.warn('API CONFIG: Loopback port 3000 detected. Rerouting to Render for safety.');
     return 'https://backend-elokantra.onrender.com';
+  }
+  
+  if (url.includes('localhost') || url.includes('127.0.0.1')) {
+    console.info(`API CONFIG: Valid local backend detected at ${url}`);
   }
   
   return url;
