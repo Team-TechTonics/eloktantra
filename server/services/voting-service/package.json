@@ -8,9 +8,9 @@
     "start": "tsx src/index.ts"
   },
   "dependencies": {
-    "@eloktantra/config": "workspace:*",
-    "@eloktantra/types": "workspace:*",
-    "@eloktantra/utils": "workspace:*",
+    "@eloktantra/config": "*",
+    "@eloktantra/types": "*",
+    "@eloktantra/utils": "*",
     "@fastify/cors": "^8.3.0",
     "@supabase/supabase-js": "^2.39.0",
     "axios": "^1.6.2",

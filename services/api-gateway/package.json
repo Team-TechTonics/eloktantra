@@ -8,8 +8,8 @@
     "start": "tsx src/index.ts"
   },
   "dependencies": {
-    "@eloktantra/config": "workspace:*",
-    "@eloktantra/utils": "workspace:*",
+    "@eloktantra/config": "*",
+    "@eloktantra/utils": "*",
     "@fastify/cors": "^8.3.0",
     "@fastify/http-proxy": "^9.3.0",
     "dotenv": "^16.3.1",
