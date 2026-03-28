@@ -2,6 +2,11 @@
   "name": "eloktantra-monorepo",
   "private": true,
   "packageManager": "npm@10.8.2",
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "services/*"
+  ],
   "engines": {
     "node": "20.x"
   },
@@ -14,6 +19,9 @@
     "db:seed": "pnpm --filter @eloktantra/database db:seed"
   },
   "devDependencies": {
+    "next": "15.1.0",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
     "@types/node": "^20.0.0",
     "ts-node": "^10.9.2",
     "tsx": "^4.21.0",
