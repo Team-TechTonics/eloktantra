@@ -1,9 +1,10 @@
 {
   "name": "eloktantra-monorepo",
   "private": true,
-  "packageManager": "pnpm@9.15.4",
+  "packageManager": "pnpm@8.15.4",
   "engines": {
-    "node": "20.x"
+    "node": "18.x",
+    "pnpm": "8.x"
   },
   "scripts": {
     "build": "turbo run build",
